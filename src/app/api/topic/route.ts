@@ -4,7 +4,9 @@ import { NextResponse } from "next/server";
 
 export const GET = catchApiError(async () => {
   const topics = await prisma.topic.findMany({
-    include: {
+    select: {
+      id: true,
+      name: true,
       _count: { select: { mindMaps: true, question: true } },
     },
     orderBy: {

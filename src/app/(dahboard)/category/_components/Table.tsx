@@ -1,11 +1,25 @@
-import React from 'react'
+"use client";
+
+import useCategoryStore from "@/store/category";
+import React, { useEffect } from "react";
 
 const Table = () => {
-  return (
-    <div>
-      
-    </div>
-  )
-}
+  const {
+    subjects,
+    chapters,
+    topics,
+    fetchSubjects,
+    fetchChapters,
+    fetchTopics,
+  } = useCategoryStore();
 
-export default Table
+  useEffect(() => {
+    fetchSubjects();
+    fetchChapters();
+    fetchTopics();
+  }, []);
+
+  return <div></div>;
+};
+
+export default Table;

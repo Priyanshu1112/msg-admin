@@ -3,6 +3,7 @@
 import React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Table from "./Table";
 
 export type category = "subject" | "topic" | "chapter";
 
@@ -47,6 +48,8 @@ const Category = () => {
           </TabsList>
         </Tabs>
       </div>
+
+      <Table />
     </div>
   );
 };
