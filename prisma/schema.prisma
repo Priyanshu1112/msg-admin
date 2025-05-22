@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  phone     String   @unique
+  email     String   @unique
+  fullName  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  adminAuth      AdminAuth?      @relation
+  AdminMMActions AdminMMAction[]
+}
+
+model AdminAuth {
+  id      String @id @default(uuid())
+  adminId String @unique
+  admin   Admin  @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  password     String // The hashed password for the admin
+  otp          String? // OTP for verification
+  otpExpiresAt DateTime? // Timestamp for OTP expiration
+
+  // JWT Token or other auth-related fields (Optional)
+  token     String? // The JWT token
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminMMAction {
+  mindMapId String
+  adminId   String
+
+  bookmarks Json?
+  nodeNotes Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //— relations
+  admin   Admin   @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  mindMap MindMap @relation(fields: [mindMapId], references: [id], onDelete: Cascade)
+
+  @@id([mindMapId, adminId])
+  @@index([adminId])
+  @@index([mindMapId])
+}
+
+model Subject {
+  id String @id @default(uuid())
+
+  name String
+
+  chapters Chapter[]
+  year     Int
+  country  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Chapter {
+  id String @id @default(uuid())
+
+  name String
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topics    Topic[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Topic {
+  id String @id @default(uuid())
+
+  name String
+
+  chapterId String
+  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  mindMaps MindMap[]
+  question Question[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MindMap {
+  id String @id @default(uuid())
+
+  mindMap Json?
+
+  topicId String
+  topic   Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  AdminMMActions AdminMMAction[]
+}
+
+model Question {
+  id String @id @default(uuid())
+
+  text    String
+  topicId String
+  topic   Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  options Option[]
+
+  explanation String
+  images      Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Option {
+  id String @id @default(uuid())
+
+  text      String
+  isCorrect Boolean
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
