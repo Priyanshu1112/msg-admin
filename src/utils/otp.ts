@@ -45,7 +45,7 @@ export async function verifyOtp(adminId: string, otp: string) {
 async function setUserOtpSecret(
   adminId: string,
   secret: string,
-  ttlSeconds: number
+  ttlSeconds: number,
 ) {
   const otp = authenticator.generate(secret); // Generate OTP using user-specific ID
   const ttl = new Date(Date.now() + ttlSeconds * 1000); // TTL in milliseconds

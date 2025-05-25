@@ -1,4 +1,4 @@
 interface ApiResponse<T> {
-    success: boolean;
-    data: T[];
-  }
+  success: boolean;
+  data: T[];
+}

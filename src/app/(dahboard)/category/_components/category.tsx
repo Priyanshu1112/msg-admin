@@ -1,9 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Table from "./Table";
+import { Input } from "@/components/ui/input";
+import AddCategory from "./AddCategory";
+import StreamsCourses from "./StreamsCourses";
 
 export type category = "subject" | "topic" | "chapter";
 
@@ -11,6 +14,7 @@ const Category = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [search, setSearch] = useState("");
 
   // Derive active tab from query param, default to 'subject'
   const param = searchParams.get("tab");
@@ -25,31 +29,43 @@ const Category = () => {
   };
 
   return (
-    <div className="overflow-hidden w-full overflow-y-auto h-screen">
+    <div className="overflow-hidden w-full overflow-y-auto h-screen px-2">
       <div className="sticky top-0 left-0 bg-white pb-4">
         <h1 className="capitalize text-3xl py-3 px-2 bg-gray-100 rounded-md mb-4">
           {activeTab}
         </h1>
-        <Tabs
-          value={activeTab}
-          onValueChange={handleTabChange}
-          className="w-[400px]"
-        >
-          <TabsList>
-            <TabsTrigger className="cursor-pointer" value="subject">
-              Subject
-            </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="chapter">
-              Chapter
-            </TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="topic">
-              Topic
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex justify-between">
+          <Tabs
+            value={activeTab}
+            onValueChange={handleTabChange}
+            className="w-[400px]"
+          >
+            <TabsList>
+              <TabsTrigger className="cursor-pointer" value="subject">
+                Subject
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="chapter">
+                Chapter
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="topic">
+                Topic
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="flex gap-4 items-center">
+            <StreamsCourses />
+            <Input
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <AddCategory activeTab={activeTab} />
+          </div>
+        </div>
       </div>
 
-      <Table />
+      <Table activeTab={activeTab} />
     </div>
   );
 };

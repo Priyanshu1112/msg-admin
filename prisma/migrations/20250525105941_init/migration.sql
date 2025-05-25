@@ -26,21 +26,34 @@ CREATE TABLE "AdminAuth" (
 );
 
 -- CreateTable
-CREATE TABLE "AdminMMAction" (
-    "mindMapId" TEXT NOT NULL,
-    "adminId" TEXT NOT NULL,
-    "bookmarks" JSONB,
-    "nodeNotes" JSONB,
+CREATE TABLE "Stream" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "AdminMMAction_pkey" PRIMARY KEY ("mindMapId","adminId")
+    CONSTRAINT "Stream_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Course" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "streamId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Course_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Subject" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "year" INTEGER[],
+    "country" TEXT NOT NULL,
+    "streamId" TEXT,
+    "courseId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -118,19 +131,19 @@ CREATE UNIQUE INDEX "Admin_email_key" ON "Admin"("email");
 CREATE UNIQUE INDEX "AdminAuth_adminId_key" ON "AdminAuth"("adminId");
 
 -- CreateIndex
-CREATE INDEX "AdminMMAction_adminId_idx" ON "AdminMMAction"("adminId");
-
--- CreateIndex
-CREATE INDEX "AdminMMAction_mindMapId_idx" ON "AdminMMAction"("mindMapId");
+CREATE UNIQUE INDEX "Stream_name_key" ON "Stream"("name");
 
 -- AddForeignKey
 ALTER TABLE "AdminAuth" ADD CONSTRAINT "AdminAuth_adminId_fkey" FOREIGN KEY ("adminId") REFERENCES "Admin"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AdminMMAction" ADD CONSTRAINT "AdminMMAction_adminId_fkey" FOREIGN KEY ("adminId") REFERENCES "Admin"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Course" ADD CONSTRAINT "Course_streamId_fkey" FOREIGN KEY ("streamId") REFERENCES "Stream"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AdminMMAction" ADD CONSTRAINT "AdminMMAction_mindMapId_fkey" FOREIGN KEY ("mindMapId") REFERENCES "MindMap"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Subject" ADD CONSTRAINT "Subject_streamId_fkey" FOREIGN KEY ("streamId") REFERENCES "Stream"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Subject" ADD CONSTRAINT "Subject_courseId_fkey" FOREIGN KEY ("courseId") REFERENCES "Course"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Chapter" ADD CONSTRAINT "Chapter_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE CASCADE ON UPDATE CASCADE;

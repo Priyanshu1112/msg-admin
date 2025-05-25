@@ -55,7 +55,7 @@ export const GET = catchApiError(async () => {
       _count: {
         chapters: subject._count.chapters,
         topics: totalTopics,
-        mindmaps: totalMindmaps,
+        mindMaps: totalMindmaps,
         questions: totalQuestions,
       },
     };

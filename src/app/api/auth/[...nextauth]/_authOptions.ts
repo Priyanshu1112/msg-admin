@@ -18,7 +18,9 @@ export const authOptions: AuthOptions = {
         otp: { label: "OTP", type: "text" },
       },
       async authorize(
-        credentials: Record<"username" | "password" | "otp", string> | undefined
+        credentials:
+          | Record<"username" | "password" | "otp", string>
+          | undefined,
       ) {
         if (!credentials) {
           throw new Error("Missing credentials");
@@ -54,7 +56,7 @@ export const authOptions: AuthOptions = {
         // 2️⃣ First factor: username + password
         const pwOk = await bcrypt.compare(
           password,
-          user.adminAuth?.password ?? ""
+          user.adminAuth?.password ?? "",
         );
         if (!pwOk) throw new Error("Invalid credentials!");
 

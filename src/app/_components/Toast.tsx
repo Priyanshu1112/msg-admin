@@ -5,11 +5,15 @@ import React, { useEffect } from "react";
 import { toast } from "sonner";
 
 const Toast = () => {
-  const { error } = useAppStore();
+  const { error, success } = useAppStore();
 
   useEffect(() => {
     if (error) toast.error(error);
   }, [error]);
+
+  useEffect(() => {
+    if (success) toast.success(success);
+  }, [success]);
 
   return <></>;
 };

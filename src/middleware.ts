@@ -18,7 +18,7 @@ export default withAuth(
         // }
       },
     },
-  }
+  },
 );
 
 // Protect all routes except the ones listed

@@ -1,6 +1,6 @@
 // app/(auth)/login/page.tsx
 
-import Category from "./_components/category";
+import Category from "./_components/Category";
 
 export const metadata = {
   title: "Category | MSG Admin",

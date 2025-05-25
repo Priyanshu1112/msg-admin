@@ -18,8 +18,7 @@ model Admin {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  adminAuth      AdminAuth?      @relation
-  AdminMMActions AdminMMAction[]
+  adminAuth AdminAuth? @relation
 }
 
 model AdminAuth {
@@ -37,23 +36,30 @@ model AdminAuth {
   updatedAt DateTime @updatedAt
 }
 
-model AdminMMAction {
-  mindMapId String
-  adminId   String
+model Stream {
+  id String @id @default(uuid())
 
-  bookmarks Json?
-  nodeNotes Json?
+  name String @unique
+
+  course  Course[]
+  subject Subject[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
 
-  //— relations
-  admin   Admin   @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  mindMap MindMap @relation(fields: [mindMapId], references: [id], onDelete: Cascade)
+model Course {
+  id String @id @default(uuid())
 
-  @@id([mindMapId, adminId])
-  @@index([adminId])
-  @@index([mindMapId])
+  name String
+
+  stream   Stream? @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  streamId String?
+
+  subject Subject[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Subject {
@@ -62,8 +68,13 @@ model Subject {
   name String
 
   chapters Chapter[]
-  year     Int
+  year     Int[]
   country  String
+
+  stream   Stream? @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  streamId String?
+  course   Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -105,9 +116,8 @@ model MindMap {
   topicId String
   topic   Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
 
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  AdminMMActions AdminMMAction[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Question {
