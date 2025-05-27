@@ -3,10 +3,10 @@
 import React, { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Table from "./Table";
 import { Input } from "@/components/ui/input";
-import AddCategory from "./AddCategory";
 import StreamsCourses from "./StreamsCourses";
+import AddCategory from "./forms/AddCategory";
+import CategoryTable from "./tables/Table";
 
 export type category = "subject" | "topic" | "chapter";
 
@@ -19,12 +19,12 @@ const Category = () => {
   // Derive active tab from query param, default to 'subject'
   const param = searchParams.get("tab");
   const activeTab =
-    param === "topic" || param === "chapter" ? (param as category) : "subject";
+    param === "subject" || param === "chapter" ? (param as category) : "topic";
 
   const handleTabChange = (val: string) => {
     const tab = val as category;
     // Update URL with ?tab=value
-    if (tab != "subject") router.push(`${pathname}?tab=${tab}`);
+    if (tab != "topic") router.push(`${pathname}?tab=${tab}`);
     else router.push(`${pathname}`);
   };
 
@@ -41,14 +41,14 @@ const Category = () => {
             className="w-[400px]"
           >
             <TabsList>
-              <TabsTrigger className="cursor-pointer" value="subject">
-                Subject
+              <TabsTrigger className="cursor-pointer" value="topic">
+                Topic
               </TabsTrigger>
               <TabsTrigger className="cursor-pointer" value="chapter">
                 Chapter
               </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="topic">
-                Topic
+              <TabsTrigger className="cursor-pointer" value="subject">
+                Subject
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -65,7 +65,7 @@ const Category = () => {
         </div>
       </div>
 
-      <Table activeTab={activeTab} />
+      <CategoryTable activeTab={activeTab} />
     </div>
   );
 };

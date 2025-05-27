@@ -63,9 +63,9 @@ const StreamsCourses = () => {
               <Accordion type="single" collapsible key={st.id}>
                 <AccordionItem value="item-1">
                   <AccordionTrigger icon={(st?.course?.length ?? 0) > 0}>
-                    <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center justify-between w-full group">
                       <span>{st.name}</span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <CreateStreamCourse
                           isStream={false}
                           streamId={st.id}

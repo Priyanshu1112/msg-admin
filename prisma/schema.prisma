@@ -60,19 +60,22 @@ model Course {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Ensure unique course names within a stream
+  @@unique([name, streamId])
 }
 
 model Subject {
   id String @id @default(uuid())
 
-  name String
+  name String @unique
 
   chapters Chapter[]
   year     Int[]
   country  String
 
-  stream   Stream? @relation(fields: [streamId], references: [id], onDelete: Cascade)
-  streamId String?
+  stream   Stream  @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  streamId String
   course   Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
   courseId String?
 
@@ -91,6 +94,9 @@ model Chapter {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // 🎯 KEY CONSTRAINT: Unique chapter name within a subject
+  @@unique([name, subjectId])
 }
 
 model Topic {
@@ -106,6 +112,9 @@ model Topic {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // 🎯 KEY CONSTRAINT: Unique topic name within a chapter
+  @@unique([name, chapterId])
 }
 
 model MindMap {
