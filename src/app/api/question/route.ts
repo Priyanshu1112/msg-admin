@@ -2,94 +2,128 @@ import { ParsedOption, ParsedQuestion } from "@/app/(dahboard)/_parser/mcq";
 import { prisma } from "@/service/prisma";
 import { Prisma } from "@prisma/client";
 import { randomUUID } from "crypto";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { catchApiError } from "../_utils/catchApiError";
+import { CustomError, successResponse } from "../_utils/Response";
 
-export async function POST(request: NextRequest) {
-  try {
-    const { file, topicId } = await request.json();
+export const POST = catchApiError(async (request: NextRequest) => {
+  const { file, topicId } = await request.json();
 
-    // Prepare data structures
-    const questionsForBulkCreate: Prisma.QuestionCreateManyInput[] = [];
-    const options: Prisma.OptionCreateManyInput[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const questionsWithImages: { id: string; images: any }[] = [];
+  // Validation
+  if (!topicId) {
+    CustomError("Topic ID is required");
+  }
 
-    // Prepare data for bulk insertion
-    file.forEach((f: ParsedQuestion) => {
-      const id = randomUUID();
+  if (!file || !Array.isArray(file) || file.length === 0) {
+    CustomError("Questions array is required and cannot be empty");
+  }
 
-      // Add to questions array WITHOUT images field
-      questionsForBulkCreate.push({
-        id,
-        text: f.question,
-        topicId: topicId,
-        explanation: f.explanation,
-        // Omitting images field for bulk creation
-      });
+  // Verify topic exists
+  const existingTopic = await prisma.topic.findUnique({
+    where: { id: topicId },
+    select: { id: true },
+  });
 
-      // Track questions that have images for later update
-      if (f.images && f.images.length > 0) {
-        questionsWithImages.push({
-          id,
-          images: f.images,
-        });
-      }
+  if (!existingTopic) {
+    CustomError("Topic not found");
+  }
 
-      // Prepare options for bulk creation
-      f.options.forEach((o: ParsedOption) => {
-        options.push({
-          text: o.text,
-          isCorrect: o.isCorrect,
-          questionId: id,
-        });
-      });
-    });
+  // Prepare data structures
+  const questionsForBulkCreate: Prisma.QuestionCreateManyInput[] = [];
+  const options: Prisma.OptionCreateManyInput[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const questionsWithImages: { id: string; images: any }[] = [];
 
-    // Perform bulk operations inside a transaction
-    await prisma.$transaction([
-      // 1. Create all questions (without images)
-      prisma.question.createMany({
-        data: questionsForBulkCreate,
-      }),
+  // Process each question
+  file.forEach((f: ParsedQuestion) => {
+    const questionId = randomUUID();
 
-      // 2. Create all options
-      prisma.option.createMany({
-        data: options,
-      }),
-    ]);
-
-    // 3. Update questions with images individually
-    if (questionsWithImages.length > 0) {
-      await Promise.all(
-        questionsWithImages.map((q) =>
-          prisma.question.update({
-            where: { id: q.id },
-            data: {
-              images: q.images as Prisma.InputJsonValue,
-            },
-          })
-        )
-      );
+    // Validate question structure
+    if (!f.question || !f.explanation) {
+      CustomError("Each question must have question text and explanation");
     }
 
-    const topic = await prisma.topic.findUnique({
-      where: { id: topicId },
-      select: {
-        id: true,
-        name: true,
-        _count: { select: { question: true, mindMaps: true } },
-      },
+    if (!f.options || f.options.length === 0) {
+      CustomError("Each question must have at least one option");
+    }
+
+    // Check if there's at least one correct answer
+    const hasCorrectAnswer = f.options.some(
+      (option: ParsedOption) => option.isCorrect
+    );
+    if (!hasCorrectAnswer) {
+      CustomError("Each question must have at least one correct answer");
+    }
+
+    // Add to questions array WITHOUT images field for bulk creation
+    questionsForBulkCreate.push({
+      id: questionId,
+      text: f.question,
+      topicId: topicId,
+      explanation: f.explanation,
     });
 
-    return NextResponse.json(topic, { status: 201 });
-  } catch (error) {
-    console.log(error);
-    return NextResponse.json(
-      {
-        message:
-          error instanceof Error ? error.message : "Something went wrong",
-      },
-      { status: 500 }
+    // Track questions that have images for later update
+    if (f.images && f.images.length > 0) {
+      questionsWithImages.push({
+        id: questionId,
+        images: f.images,
+      });
+    }
+
+    // Prepare options for bulk creation
+    f.options.forEach((option: ParsedOption) => {
+      if (!option.text) {
+        CustomError("All options must have text");
+      }
+
+      options.push({
+        text: option.text,
+        isCorrect: option.isCorrect,
+        questionId: questionId,
+      });
+    });
+  });
+
+  // Perform bulk operations inside a transaction
+  await prisma.$transaction([
+    // 1. Create all questions (without images)
+    prisma.question.createMany({
+      data: questionsForBulkCreate,
+    }),
+
+    // 2. Create all options
+    prisma.option.createMany({
+      data: options,
+    }),
+  ]);
+
+  // 3. Update questions with images individually (if any)
+  if (questionsWithImages.length > 0) {
+    await Promise.all(
+      questionsWithImages.map((q) =>
+        prisma.question.update({
+          where: { id: q.id },
+          data: {
+            images: q.images as Prisma.InputJsonValue,
+          },
+        })
+      )
     );
   }
-}
+
+  // Get updated topic with counts
+  const updatedTopic = await prisma.topic.findUnique({
+    where: { id: topicId },
+    select: {
+      id: true,
+      name: true,
+      _count: { select: { question: true, mindMaps: true } },
+    },
+  });
+
+  return successResponse(
+    updatedTopic,
+    `Successfully created ${file.length} question(s)!`
+  );
+});

@@ -3,6 +3,7 @@ import { catchApiError } from "../../_utils/catchApiError";
 import { CustomError, successResponse } from "../../_utils/Response";
 import { prisma } from "@/service/prisma";
 
+
 export const PUT = catchApiError(
   async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;

@@ -50,8 +50,8 @@ export const PUT = catchApiError(
 );
 
 export const DELETE = catchApiError(
-  async (req: NextRequest, { params }: { params: { id: string } }) => {
-    const { id } = params;
+  async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
 
     if (!id) CustomError("Id is required to delete chapter.");
 

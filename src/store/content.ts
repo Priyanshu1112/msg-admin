@@ -6,7 +6,7 @@ import { handleApiResponse } from "./_utils/handleApiResponse";
 import useCategoryStore from "./category";
 
 // Add MindMapNode interface (adjust based on your actual structure)
-export interface MindMapNode {
+interface MindMapNode {
   id: string;
   name: string;
   color: string;
@@ -14,23 +14,33 @@ export interface MindMapNode {
   children: MindMapNode[];
 }
 
+export interface MindMap {
+  id: string;
+  name: string;
+  mindMap: MindMapNode[];
+  description?: string;
+}
+
 export interface Question extends dbQ {
   options: Option[];
 }
 
 interface ContentState {
-  mindMaps: MindMapNode[];
+  mindMaps: MindMap[];
   questions: Question[];
 
   //   Loading states
   loadingMindMaps: boolean;
   loadingQuestions: boolean;
+
   //   Creating states
   creatingMindMaps: boolean;
   creatingQuestions: boolean;
+
   //   Updating states
   updatingMindMaps: boolean;
   updatingQuestions: boolean;
+
   //   Deleting states
   deletingMindMaps: boolean;
   deletingQuestions: boolean;
@@ -50,6 +60,8 @@ interface ContentState {
     topicId: string;
     questions: Question[];
   }) => Promise<void>;
+  fetchMindMaps: (topicId: string) => Promise<void>;
+  fetchQuestions: (topicId: string) => Promise<void>;
 }
 
 const initialState = {
@@ -95,9 +107,6 @@ const useContentStore = create<ContentState>((set, get) => ({
         handleApiResponse(response.ok, result.message, () => {
           if (response.ok) {
             // Update local store with new mind maps
-            set({
-              mindMaps: [...get().mindMaps, ...mindMaps],
-            });
 
             // Update topic count in category store
             const { topics } = useCategoryStore.getState();
@@ -175,6 +184,34 @@ const useContentStore = create<ContentState>((set, get) => ({
       } finally {
         set({ creatingQuestions: false });
       }
+    });
+  },
+
+  async fetchMindMaps(topicId) {
+    return catchStoreError(async () => {
+      set({ loadingMindMaps: true });
+      const res = await fetch(`/api/topic/${topicId}/mind-map`);
+
+      const response = await res.json();
+      handleApiResponse(res.ok, response.message, () => {
+        set({ mindMaps: response.data });
+      });
+
+      set({ loadingMindMaps: false });
+    });
+  },
+
+  async fetchQuestions(topicId) {
+    return catchStoreError(async () => {
+      set({ loadingQuestions: true });
+      const res = await fetch(`/api/topic/${topicId}/question`);
+
+      const response = await res.json();
+      handleApiResponse(res.ok, response.message, () => {
+        set({ questions: response.data });
+      });
+
+      set({ loadingQuestions: false });
     });
   },
 }));
