@@ -19,6 +19,7 @@ import { Edit2Icon, LoaderCircle, Trash2 } from "lucide-react";
 import { DeleteCategoryDialog } from "../DeleteDialog";
 import { Button } from "@/components/ui/button";
 import AddCategory from "../forms/AddCategory";
+import AddContent from "../forms/AddContent";
 
 const TopicTable = () => {
   const { topics, fetchTopics, setActiveTopicId, deleteTopic } =
@@ -66,17 +67,17 @@ const TopicTable = () => {
       cell: ({ row }) => {
         return (
           <div className="flex gap-2 items-center justify-end pr-2">
-            <Button
-              onClick={() => {
-                setActiveTopicId(row.original.id);
-                // setOpen(true);
-              }}
-              size={"sm"}
-              variant={"outline"}
-              className="text-sm cursor-pointer bg-transparent hover:bg-white"
+            <AddContent
+              topic={{ id: row.original.id, name: row.original.name }}
             >
-              Add Content
-            </Button>
+              <Button
+                size={"sm"}
+                variant={"outline"}
+                className="text-sm cursor-pointer bg-transparent hover:bg-white"
+              >
+                Add Content
+              </Button>
+            </AddContent>
             <Edit2Icon
               size={16}
               className="cursor-pointer"
