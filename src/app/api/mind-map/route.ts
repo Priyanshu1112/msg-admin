@@ -4,9 +4,11 @@ import { prisma } from "@/service/prisma";
 import { randomUUID } from "crypto";
 import { catchApiError } from "../_utils/catchApiError";
 import { CustomError, successResponse } from "../_utils/Response";
+import { MindMap } from "@/store/content";
 
 export const POST = catchApiError(async (request: NextRequest) => {
-  const { topicId, mindMaps } = await request.json();
+  const { topicId, mindMaps }: { topicId: string; mindMaps: MindMap[] } =
+    await request.json();
 
   // Validation
   if (!topicId) {
@@ -20,30 +22,20 @@ export const POST = catchApiError(async (request: NextRequest) => {
   // Verify topic exists
   const existingTopic = await prisma.topic.findUnique({
     where: { id: topicId },
-    select: { id: true }
+    select: { id: true },
   });
 
   if (!existingTopic) {
     CustomError("Topic not found");
   }
 
-  // Validate mind map structure
-  mindMaps.forEach((mindMap: { id: any; name: any; }, index: any) => {
-    if (!mindMap || typeof mindMap !== 'object') {
-      CustomError(`Mind map at index ${index} is invalid`);
-    }
-
-    // Basic structure validation - adjust based on your ExtendedMindMapNode interface
-    if (!mindMap.id || !mindMap.name) {
-      CustomError(`Mind map at index ${index} must have 'id' and 'name' properties`);
-    }
-  });
-
   // Prepare mind maps for bulk creation
-  const mindMapsForBulkCreate = mindMaps.map((mindMap: any) => ({
+  const mindMapsForBulkCreate = mindMaps.map((mindMap: MindMap) => ({
     id: randomUUID(),
     topicId: topicId,
-    mindMap: mindMap, // Store the entire mind map structure as JSON
+    name: mindMap.name,
+    description: mindMap.description,
+    mindMap: JSON.stringify(mindMap.mindMap), // Store the entire mind map structure as JSON
   }));
 
   // Perform bulk creation
@@ -51,18 +43,13 @@ export const POST = catchApiError(async (request: NextRequest) => {
     data: mindMapsForBulkCreate,
   });
 
-  // Get updated topic with counts
-  const updatedTopic = await prisma.topic.findUnique({
-    where: { id: topicId },
-    select: {
-      id: true,
-      name: true,
-      _count: { select: { question: true, mindMaps: true } },
-    },
+  const createdMindMaps = await prisma.mindMap.findMany({
+    where: { topicId, name: { in: mindMaps.map((m: MindMap) => m.name) } },
+    select: { id: true, mindMap: true, name: true, description: true },
   });
 
   return successResponse(
-    updatedTopic,
+    createdMindMaps,
     `Successfully created ${mindMaps.length} mind map(s)`
   );
 });

@@ -9,7 +9,7 @@ export const GET = catchApiError(
 
     const mindMaps = await prisma.mindMap.findMany({
       where: { topicId: id },
-      select: { id: true, mindMap: true },
+      select: { id: true, mindMap: true, name: true, description: true },
     });
 
     return successResponse(mindMaps);

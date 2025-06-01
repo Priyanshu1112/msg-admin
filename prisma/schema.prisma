@@ -129,6 +129,8 @@ model MindMap {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([name, topicId])
 }
 
 model Question {

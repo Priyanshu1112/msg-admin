@@ -16,6 +16,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import Loader from "@/app/_components/Loader";
+import Link from "next/link";
+import { Edit2Icon, EyeIcon, Trash2Icon } from "lucide-react";
 
 const MindMapTable = ({ topicId }: { topicId: string }) => {
   const { mindMaps, loadingMindMaps, fetchMindMaps } = useContentStore();
@@ -38,12 +40,23 @@ const MindMapTable = ({ topicId }: { topicId: string }) => {
       accessorKey: "description",
       header: "Description",
       cell: ({ row }) => {
-        return row.original?.description ?? "N/A";
+        return row.original?.description || "N/A";
       },
     },
     {
       accessorKey: "actions",
       header: () => <p className="text-end pr-2">Actions</p>,
+      cell: ({ row }) => {
+        return (
+          <div className="w-full flex justify-end items-center gap-2">
+            <Link href={`/category/${topicId}/mind-map?index=${row.index}`}>
+              <EyeIcon size={16} />
+            </Link>
+            <Edit2Icon size={16} className="cursor-pointer"/>
+            <Trash2Icon size={16} className="cursor-pointer text-red-600" />
+          </div>
+        );
+      },
     },
   ];
 

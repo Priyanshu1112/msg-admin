@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import MindMapTable from "../tables/MindMapTable";
 import { Input } from "@/components/ui/input";
 import AddMindMap from "./AddMindMap";
+import Questions from "./Questions";
+import AddQuestion from "./AddQuestion";
 
 interface AddContentProps {
   topic: {
@@ -27,42 +29,24 @@ interface AddContentProps {
 const AddContent = ({ topic, children }: AddContentProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [mmOpen, setMmOpen] = useState(false);
+  const [questionOpen, setQuestionOpen] = useState(false);
   const [tab, setTab] = useState("mindmap");
   const inputFileRef = useRef<HTMLInputElement | null>(null);
-  // inside the component
-
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedFiles(e.target.files);
-
-    // if (tab === "mindmap") {
-    //   if (!selectedFiles || selectedFiles.length === 0) return;
-
-    //   try {
-    //     const parsedMindMaps = await Promise.all(
-    //       Array.from(selectedFiles).map(async (file) => {
-    //         const data = await parseMindMap(file);
-    //         return {
-    //           name: file.name,
-    //           data,
-    //         };
-    //       })
-    //     );
-
-    //     console.log("Parsed Mind Maps:", parsedMindMaps);
-    //     // You can now use createMindMaps({ topicId: topic.id, mindMaps: parsedMindMaps })
-    //   } catch (error) {
-    //     console.error("Error parsing mind maps:", error);
-    //   }
-    // } else if (tab === "questions") {
-    //   // handle question file submission
-    // }
   };
 
   useEffect(() => {
-    if (selectedFiles) setMmOpen(true);
-  }, [selectedFiles]);
+    if (selectedFiles)
+      if (tab == "mindmap") setMmOpen(true);
+      else if (tab == "questions") setQuestionOpen(true);
+  }, [selectedFiles, tab]);
+
+  useEffect(() => {
+    setSelectedFiles(null);
+  }, [tab]);
 
   return (
     <Sheet
@@ -73,7 +57,7 @@ const AddContent = ({ topic, children }: AddContentProps) => {
       }}
     >
       <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent className="min-w-[40vw] flex flex-col h-full">
+      <SheetContent className="min-w-[40vw] flex h-full">
         <SheetHeader>
           <SheetTitle>{topic.name}</SheetTitle>
         </SheetHeader>
@@ -81,9 +65,9 @@ const AddContent = ({ topic, children }: AddContentProps) => {
         <Tabs
           value={tab}
           onValueChange={setTab}
-          className="p-4 flex-1 overflow-y-auto"
+          className="p-4 pt-0 flex-1 overflow-y-auto"
         >
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center sticky top-0 left-0 bg-white">
             <TabsList className="mb-4">
               <TabsTrigger value="mindmap">Mind Map</TabsTrigger>
               <TabsTrigger value="questions">Questions</TabsTrigger>
@@ -113,10 +97,25 @@ const AddContent = ({ topic, children }: AddContentProps) => {
             <MindMapTable topicId={topic.id} />
           </TabsContent>
 
-          <TabsContent value="questions"></TabsContent>
+          <TabsContent value="questions">
+            <Questions topicId={topic.id} />
+          </TabsContent>
         </Tabs>
 
-        <AddMindMap open={mmOpen} setOpen={setMmOpen} />
+        <AddMindMap
+          open={mmOpen}
+          setOpen={setMmOpen}
+          selectedFiles={selectedFiles}
+          topicId={topic.id}
+        />
+
+        <AddQuestion
+          open={questionOpen}
+          setOpen={setQuestionOpen}
+          selectedFiles={selectedFiles}
+          topicId={topic.id}
+          
+        />
       </SheetContent>
     </Sheet>
   );

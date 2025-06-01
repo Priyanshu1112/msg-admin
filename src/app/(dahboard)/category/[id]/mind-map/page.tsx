@@ -24,7 +24,8 @@ export default function MindMapPage() {
   }, [topicId, fetchMindMaps]);
 
   const topicData: Topic | undefined = useMemo(() => {
-    if (topicId) topics.find((t) => t.id == topicId);
+    if (topicId) return topics.find((t) => t.id == topicId);
+    return undefined;
   }, [topicId, topics]);
 
   const [selectedMindMapIndex, setSelectedMindMapIndex] = useState(0);
@@ -58,12 +59,12 @@ export default function MindMapPage() {
   //   }, [topicId]);
 
   const handleBack = () => {
-    router.push("/category?tab=topic");
+    router.push("/category");
   };
 
   const handleAddMindMap = () => {
     // This would open the add content dialog or navigate to upload page
-    router.push(`/category?tab=topic`);
+    router.push(`/category`);
   };
 
   if (loadingMindMaps) {
@@ -86,7 +87,9 @@ export default function MindMapPage() {
     );
   }
 
-  const currentMindMap = mindMaps[selectedMindMapIndex].mindMap;
+  const currentMindMap = JSON.parse(
+    mindMaps[selectedMindMapIndex].mindMap as unknown as string
+  );
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -120,7 +123,7 @@ export default function MindMapPage() {
       </div>
 
       {/* Mind Map Navigation */}
-      {topicData?._count.mindMaps > 1 && (
+      {(topicData?._count.mindMaps ?? 0) > 1 && (
         <div className="bg-white border-b px-6 py-2">
           <div className="flex items-center gap-2 overflow-x-auto">
             {mindMaps.map((mindMap, index) => (
@@ -131,7 +134,7 @@ export default function MindMapPage() {
                 onClick={() => setSelectedMindMapIndex(index)}
                 className="whitespace-nowrap"
               >
-                Mind Map {index + 1}
+                {mindMap.name}
               </Button>
             ))}
           </div>

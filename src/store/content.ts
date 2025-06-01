@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { catchStoreError } from "./_utils/catchStoreError";
 import { handleApiResponse } from "./_utils/handleApiResponse";
 import useCategoryStore from "./category";
+import { ParsedQuestion } from "@/app/(dahboard)/category/_components/forms/AddQuestion";
 
 // Add MindMapNode interface (adjust based on your actual structure)
 interface MindMapNode {
@@ -23,6 +24,11 @@ export interface MindMap {
 
 export interface Question extends dbQ {
   options: Option[];
+}
+
+export interface TaggedImg {
+  tag: string;
+  data: string;
 }
 
 interface ContentState {
@@ -51,7 +57,7 @@ interface ContentState {
     mindMaps,
   }: {
     topicId: string;
-    mindMaps: MindMapNode[];
+    mindMaps: MindMap[];
   }) => Promise<void>;
   createQuestions: ({
     topicId,
@@ -107,6 +113,7 @@ const useContentStore = create<ContentState>((set, get) => ({
         handleApiResponse(response.ok, result.message, () => {
           if (response.ok) {
             // Update local store with new mind maps
+            set({ mindMaps: [...get().mindMaps, result.data] });
 
             // Update topic count in category store
             const { topics } = useCategoryStore.getState();
