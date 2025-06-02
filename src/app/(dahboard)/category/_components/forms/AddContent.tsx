@@ -69,8 +69,15 @@ const AddContent = ({ topic, children }: AddContentProps) => {
         >
           <div className="flex justify-between items-center sticky top-0 left-0 bg-white">
             <TabsList className="mb-4">
-              <TabsTrigger value="mindmap">Mind Map</TabsTrigger>
-              <TabsTrigger value="questions">Questions</TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="mindmap">
+                Mind Map
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="questions">
+                Questions
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="flashcards">
+                Flash Cards
+              </TabsTrigger>
             </TabsList>
             <Button
               size={"sm"}
@@ -114,7 +121,6 @@ const AddContent = ({ topic, children }: AddContentProps) => {
           setOpen={setQuestionOpen}
           selectedFiles={selectedFiles}
           topicId={topic.id}
-          
         />
       </SheetContent>
     </Sheet>

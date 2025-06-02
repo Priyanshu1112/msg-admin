@@ -30,7 +30,7 @@ export interface TaggedImg {
   data: string;
 }
 
-export interface ParsedQuestion {
+export interface ParsedQuestion {   
   text: string;
   options: ParsedOption[];
   explanation: string;
@@ -164,7 +164,7 @@ const AddQuestion = ({
                     <span className="ml-2">Submitting...</span>
                   </>
                 ) : (
-                  `Submit ${parsedQuestions.length} Mind Map(s)`
+                  `Submit`
                 )}
               </Button>
             </div>

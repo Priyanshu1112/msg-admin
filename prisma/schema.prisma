@@ -110,8 +110,9 @@ model Topic {
   mindMaps MindMap[]
   question Question[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  QuestionBundle QuestionBundle[]
 
   // 🎯 KEY CONSTRAINT: Unique topic name within a chapter
   @@unique([name, chapterId])
@@ -133,6 +134,17 @@ model MindMap {
   @@unique([name, topicId])
 }
 
+model QuestionBundle {
+  id        String     @id @default(uuid())
+  name      String
+  topicId   String
+  topic     Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  questions Question[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Question {
   id String @id @default(uuid())
 
@@ -142,8 +154,10 @@ model Question {
 
   options Option[]
 
-  explanation String
-  images      Json?
+  explanation      String
+  images           Json?
+  QuestionBundle   QuestionBundle? @relation(fields: [questionBundleId], references: [id])
+  questionBundleId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

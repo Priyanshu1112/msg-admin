@@ -19,7 +19,7 @@ export interface MindMap {
   id: string;
   name: string;
   mindMap: MindMapNode[];
-  description?: string;
+  description: string;
 }
 
 export interface Question extends dbQ {
@@ -48,7 +48,7 @@ interface ContentState {
   updatingQuestions: boolean;
 
   //   Deleting states
-  deletingMindMaps: boolean;
+  deletingMindMap: boolean;
   deletingQuestions: boolean;
 
   //   Actions
@@ -68,6 +68,15 @@ interface ContentState {
   }) => Promise<void>;
   fetchMindMaps: (topicId: string) => Promise<void>;
   fetchQuestions: (topicId: string) => Promise<void>;
+  updateMindMap: ({
+    mindMapId,
+    mindMap,
+  }: {
+    mindMapId: string;
+    mindMap: MindMap;
+  }) => Promise<void>;
+  deleteMindMap: (id: string) => Promise<void>;
+  deleteQuestion: (id: string) => Promise<void>;
 }
 
 const initialState = {
@@ -84,7 +93,7 @@ const initialState = {
   updatingMindMaps: false,
   updatingQuestions: false,
   //   Deleting states
-  deletingMindMaps: false,
+  deletingMindMap: false,
   deletingQuestions: false,
 };
 
@@ -219,6 +228,59 @@ const useContentStore = create<ContentState>((set, get) => ({
       });
 
       set({ loadingQuestions: false });
+    });
+  },
+
+  async updateMindMap({ mindMapId, mindMap }) {
+    return catchStoreError(async () => {
+      set({ updatingMindMaps: true });
+      const res = await fetch("/api/mind-map/" + mindMapId, {
+        method: "PUT",
+        body: JSON.stringify(mindMap),
+      });
+
+      const response = await res.json();
+      handleApiResponse(response.ok, response.message, () => {
+        set({
+          mindMaps: [
+            ...get().mindMaps.map((m) =>
+              m.id == mindMapId ? response.data : m
+            ),
+          ],
+        });
+      });
+
+      set({ updatingMindMaps: false });
+    });
+  },
+
+  async deleteMindMap(id) {
+    return catchStoreError(async () => {
+      set({ deletingMindMap: true });
+      const res = await fetch("/api/mind-map/" + id, { method: "DELETE" });
+
+      const response = await res.json();
+
+      handleApiResponse(res.ok, response.message, () => {
+        set({ mindMaps: [...get().mindMaps.filter((m) => m.id != id)] });
+      });
+
+      set({ deletingMindMap: false });
+    });
+  },
+
+  async deleteQuestion(id) {
+    return catchStoreError(async () => {
+      set({ deletingQuestions: true });
+      const res = await fetch("/api/question/" + id, { method: "DELETE" });
+
+      const response = await res.json();
+
+      handleApiResponse(res.ok, response.message, () => {
+        set({ questions: [...get().questions.filter((q) => q.id != id)] });
+      });
+
+      set({ deletingQuestions: false });
     });
   },
 }));

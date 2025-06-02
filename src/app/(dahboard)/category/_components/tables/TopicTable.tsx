@@ -75,7 +75,7 @@ const TopicTable = () => {
                 variant={"outline"}
                 className="text-sm cursor-pointer bg-transparent hover:bg-white"
               >
-                Content
+                Add Content
               </Button>
             </AddContent>
             <Edit2Icon

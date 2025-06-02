@@ -2,9 +2,10 @@ import { Separator } from "@/components/ui/separator";
 
 import { cn } from "@/lib/utils";
 import useContentStore, { Question, TaggedImg } from "@/store/content";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import TextWithImages from "./TextWithImage";
 import Loader from "@/app/_components/Loader";
+import { LoaderCircle, Trash2Icon } from "lucide-react";
 
 const Questions = ({
   topicId,
@@ -19,17 +20,43 @@ const Questions = ({
     questions: storeQuestions,
     fetchQuestions,
     loadingQuestions,
+    deleteQuestion,
   } = useContentStore();
+  const [deleteId, setDeleteId] = useState("");
+  const [localUploadedQuestions, setLocalUploadedQuestions] =
+    useState<Question[]>(parsedQuestions);
 
   useEffect(() => {
     fetchQuestions(topicId);
   }, [fetchQuestions, topicId]);
 
   const questions = useMemo(() => {
-    if (!isUpload && parsedQuestions.length == 0) return storeQuestions;
+    if (!isUpload && localUploadedQuestions.length == 0) return storeQuestions;
 
-    return parsedQuestions;
-  }, [isUpload, parsedQuestions, storeQuestions]);
+    return localUploadedQuestions;
+  }, [isUpload, storeQuestions, localUploadedQuestions]);
+
+  useEffect(() => {
+    console.log(localUploadedQuestions);
+  }, [localUploadedQuestions]);
+
+  const handleDelete = async (id: string) => {
+    const confirm = window.confirm(
+      "Are you sure you want to delete this question?"
+    );
+
+    if (confirm && isUpload) {
+      setLocalUploadedQuestions((prev) =>
+        prev.filter((_, ind) => {
+          return ind.toString() !== id.toString();
+        })
+      );
+    } else if (confirm) {
+      setDeleteId(id);
+      await deleteQuestion(id);
+      setDeleteId("");
+    }
+  };
 
   return (
     <div className="px-4 pb-4">
@@ -40,15 +67,31 @@ const Questions = ({
           return (
             <div key={q.id ?? ind}>
               <div
-                className={cn("grid grid-cols-10 gap-1", ind !== 0 && "mt-2")}
+                className={cn(
+                  "grid grid-cols-11 gap-1 items-start",
+                  ind !== 0 && "mt-2"
+                )}
               >
-                <p>Q{ind + 1}:</p>
-                {/* <p className="col-span-9">{q.text}</p> */}
-                <TextWithImages
-                  text={q.text}
-                  images={(q.images ?? []) as unknown as TaggedImg[]}
-                  className="col-span-9"
-                />
+                <div className="col-span-10 flex gap-2">
+                  <p>Q{ind + 1}:</p>
+                  <TextWithImages
+                    text={q.text}
+                    images={(q.images ?? []) as unknown as TaggedImg[]}
+                    className="flex-1"
+                  />
+                </div>
+
+                <div className="col-span-1 flex justify-end pt-1">
+                  {deleteId == q.id ? (
+                    <LoaderCircle size={16} className="rotate" />
+                  ) : (
+                    <Trash2Icon
+                      onClick={() => handleDelete(q.id ?? ind)}
+                      size={16}
+                      className="cursor-pointer text-red-600"
+                    />
+                  )}
+                </div>
               </div>
 
               {q.options.map((o, optInd) => {

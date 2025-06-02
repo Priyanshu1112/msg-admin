@@ -15,6 +15,7 @@ import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { parseMindMap } from "@/app/(dahboard)/_parser/mind-map";
 import useContentStore, { MindMap } from "@/store/content";
 import useAppStore from "@/store/app";
+import PreviewMindMap from "../PreviewMindMap";
 
 // Simple Textarea component
 const Textarea = React.forwardRef<
@@ -41,8 +42,10 @@ export interface ParsedMindMap {
 interface AddMindMapProps {
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  selectedFiles: FileList | null;
-  topicId: string;
+  selectedFiles?: FileList | null;
+  topicId?: string;
+  isEdit?: boolean;
+  mindMapId?: string;
 }
 
 const AddMindMap = ({
@@ -50,45 +53,57 @@ const AddMindMap = ({
   setOpen,
   selectedFiles,
   topicId,
+  isEdit = false,
+  mindMapId = "",
 }: AddMindMapProps) => {
-  const { creatingMindMaps, createMindMaps } = useContentStore();
+  const { creatingMindMaps, createMindMaps, mindMaps, updateMindMap } =
+    useContentStore();
   const { setError } = useAppStore();
   const [parsedMindMaps, setParsedMindMaps] = useState<ParsedMindMap[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [preview, setPreview] = useState(false);
 
   // Parse files when component opens and files are available
   useEffect(() => {
-    const parseFiles = async () => {
-      if (!selectedFiles || selectedFiles.length === 0) return;
+    if (!isEdit) {
+      const parseFiles = async () => {
+        if (!selectedFiles || selectedFiles.length === 0) return;
 
-      setIsLoading(true);
-      try {
-        const parsedMindMaps = await Promise.all(
-          Array.from(selectedFiles).map(async (file) => {
-            const mindMap = await parseMindMap(file);
-            return {
-              name: file.name.replace(".xlsx", ""), // Remove extension for cleaner name
-              mindMap,
-              description: "",
-            };
-          })
-        );
+        setIsLoading(true);
+        try {
+          const parsedMindMaps = await Promise.all(
+            Array.from(selectedFiles).map(async (file) => {
+              const mindMap = await parseMindMap(file);
+              return {
+                name: file.name.replace(".xlsx", ""), // Remove extension for cleaner name
+                mindMap,
+                description: "",
+              };
+            })
+          );
 
-        setParsedMindMaps(parsedMindMaps);
-      } catch (error) {
-        setError(
-          error instanceof Error ? error.message : "Errow while parsing!"
-        );
-        // You could add error handling here, like showing a toast
-      } finally {
-        setIsLoading(false);
+          setParsedMindMaps(parsedMindMaps);
+        } catch (error) {
+          setError(
+            error instanceof Error ? error.message : "Errow while parsing!"
+          );
+          // You could add error handling here, like showing a toast
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      if (open && selectedFiles) {
+        parseFiles();
       }
-    };
-
-    if (open && selectedFiles) {
-      parseFiles();
+    } else {
+      const found = mindMaps.find((mm) => mm.id == mindMapId);
+      if (found)
+        setParsedMindMaps([
+          { ...found, mindMap: JSON.parse(found.mindMap as unknown as string) },
+        ]);
     }
-  }, [open, selectedFiles, setError]);
+  }, [open, selectedFiles, setError, isEdit, mindMapId, mindMaps]);
 
   // Update name for a specific mind map
   const updateMindMapName = (index: number, newName: string) => {
@@ -108,10 +123,16 @@ const AddMindMap = ({
 
   // Handle form submission
   const handleSubmit = async () => {
-    await createMindMaps({
-      topicId,
-      mindMaps: parsedMindMaps as unknown as MindMap[],
-    });
+    if (!isEdit && topicId)
+      await createMindMaps({
+        topicId,
+        mindMaps: parsedMindMaps as unknown as MindMap[],
+      });
+    else
+      await updateMindMap({
+        mindMapId,
+        mindMap: parsedMindMaps[0] as MindMap,
+      });
     // Close the sheet after successful submission
     setOpen(false);
 
@@ -125,12 +146,29 @@ const AddMindMap = ({
     setParsedMindMaps([]);
   };
 
+  function getFirstParents(
+    mindMapJson: MindMap
+  ): { id: string; name: string }[] {
+    try {
+      const root =
+        typeof mindMapJson === "string" ? JSON.parse(mindMapJson) : mindMapJson;
+      if (!root || !root.children) return [];
+
+      return root.children.map(
+        ({ id, name }: { id: string; name: string }) => ({ id, name })
+      );
+    } catch (err) {
+      console.error("Invalid mindMap JSON:", err);
+      return [];
+    }
+  }
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger></SheetTrigger>
       <SheetContent className="min-w-[50vw] flex flex-col h-full">
         <SheetHeader>
-          <SheetTitle>Add Mind Maps</SheetTitle>
+          <SheetTitle>{isEdit ? "Edit" : "Add"} Mind Maps</SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -146,18 +184,25 @@ const AddMindMap = ({
           ) : parsedMindMaps.length > 0 ? (
             <>
               <div className="mb-4">
-                <p className="text-sm text-muted-foreground">
-                  {parsedMindMaps.length} mind map(s) parsed successfully. Edit
-                  the names and descriptions below:
-                </p>
+                {!isEdit && (
+                  <p className="text-sm text-muted-foreground">
+                    {parsedMindMaps.length} mind map(s) parsed successfully.
+                    Edit the names and descriptions below:
+                  </p>
+                )}
               </div>
 
               {parsedMindMaps.map((mindMap, index) => (
                 <Card key={index} className="border">
-                  <CardHeader>
+                  <CardHeader className="flex flex-row items-start justify-between">
                     <CardTitle className="text-lg">
                       Mind Map {index + 1}
                     </CardTitle>
+                    <PreviewMindMap
+                      open={preview}
+                      setOpen={setPreview}
+                      mindMap={mindMap}
+                    />
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
@@ -190,7 +235,18 @@ const AddMindMap = ({
                     </div>
 
                     <div className="text-xs text-muted-foreground">
-                      <p>Root: {mindMap.mindMap?.name || "Unknown"}</p>
+                      <div>
+                        <span className="font-medium capitalize">Root:</span>{" "}
+                        {mindMap.mindMap?.name || "Unknown"}
+                      </div>
+                      <div>
+                        <span className="font-medium">First children:</span>
+                        <ul className="list-disc list-inside ml-4 mt-1 space-y-1 capitalize">
+                          {getFirstParents(mindMap.mindMap).map((m) => (
+                            <li key={m.id}>{m.name}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -232,6 +288,8 @@ const AddMindMap = ({
                   <Loader size={16} />
                   <span className="ml-2">Submitting...</span>
                 </>
+              ) : isEdit ? (
+                "Edit"
               ) : (
                 `Submit ${parsedMindMaps.length} Mind Map(s)`
               )}

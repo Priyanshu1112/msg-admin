@@ -6,7 +6,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -17,14 +17,31 @@ import {
 } from "@/components/ui/table";
 import Loader from "@/app/_components/Loader";
 import Link from "next/link";
-import { Edit2Icon, EyeIcon, Trash2Icon } from "lucide-react";
+import { Edit2Icon, EyeIcon, LoaderCircle, Trash2Icon } from "lucide-react";
+import AddMindMap from "../forms/AddMindMap";
 
 const MindMapTable = ({ topicId }: { topicId: string }) => {
-  const { mindMaps, loadingMindMaps, fetchMindMaps } = useContentStore();
+  const { mindMaps, loadingMindMaps, fetchMindMaps, deleteMindMap } =
+    useContentStore();
+  const [deleteId, setDeleteId] = useState("");
+  const [editId, setEditId] = useState("");
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     fetchMindMaps(topicId);
   }, [fetchMindMaps, topicId]);
+
+  const handleDelete = async (id: string) => {
+    const confirm = window.confirm(
+      "Are you sure you want to delete this mind-map?"
+    );
+
+    if (confirm) {
+      setDeleteId(id);
+      await deleteMindMap(id);
+      setDeleteId("");
+    }
+  };
 
   const mindMapColumn: ColumnDef<MindMap>[] = [
     {
@@ -52,8 +69,23 @@ const MindMapTable = ({ topicId }: { topicId: string }) => {
             <Link href={`/category/${topicId}/mind-map?index=${row.index}`}>
               <EyeIcon size={16} />
             </Link>
-            <Edit2Icon size={16} className="cursor-pointer"/>
-            <Trash2Icon size={16} className="cursor-pointer text-red-600" />
+            <Edit2Icon
+              size={16}
+              className="cursor-pointer"
+              onClick={() => {
+                setEditId(row.original.id);
+                setOpen(true);
+              }}
+            />
+            {deleteId == row.original.id ? (
+              <LoaderCircle size={16} className="rotate" />
+            ) : (
+              <Trash2Icon
+                onClick={() => handleDelete(row.original.id)}
+                size={16}
+                className="cursor-pointer text-red-600"
+              />
+            )}
           </div>
         );
       },
@@ -120,6 +152,13 @@ const MindMapTable = ({ topicId }: { topicId: string }) => {
           )}
         </TableBody>
       </Table>
+
+      <AddMindMap
+        open={open}
+        setOpen={setOpen}
+        isEdit={true}
+        mindMapId={editId}
+      />
     </div>
   );
 };

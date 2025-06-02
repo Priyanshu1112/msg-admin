@@ -7,10 +7,10 @@ export const DELETE = catchApiError(
   async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
 
-    if (!id) CustomError("Id is required to delete course.");
+    if (!id) CustomError("Id is required to delete question.");
 
-    const res = await prisma.course.delete({ where: { id } });
+    const res = await prisma.question.delete({ where: { id } });
 
-    return successResponse(res, "Course deleted successfully!");
+    return successResponse(res, "Question deleted successfully!");
   }
 );
