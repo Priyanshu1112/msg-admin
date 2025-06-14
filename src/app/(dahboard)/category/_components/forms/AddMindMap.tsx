@@ -131,7 +131,9 @@ const AddMindMap = ({
     else
       await updateMindMap({
         mindMapId,
-        mindMap: parsedMindMaps[0] as MindMap,
+        // mindMap: parsedMindMaps[0] as MindMap,
+        name: parsedMindMaps[0].name,
+        description: parsedMindMaps[0].description,
       });
     // Close the sheet after successful submission
     setOpen(false);

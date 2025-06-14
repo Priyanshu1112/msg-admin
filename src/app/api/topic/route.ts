@@ -12,7 +12,7 @@ export const GET = catchApiError(async () => {
       chapter: {
         select: { id: true, name: true },
       },
-      _count: { select: { mindMaps: true, question: true } },
+      _count: { select: { mindMaps: true, question: true, flashCard: true } },
     },
     orderBy: {
       name: "asc",

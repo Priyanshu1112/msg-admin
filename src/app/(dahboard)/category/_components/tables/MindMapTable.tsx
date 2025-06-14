@@ -66,7 +66,7 @@ const MindMapTable = ({ topicId }: { topicId: string }) => {
       cell: ({ row }) => {
         return (
           <div className="w-full flex justify-end items-center gap-2">
-            <Link href={`/category/${topicId}/mind-map?index=${row.index}`}>
+            <Link href={`/category/${topicId}/mind-map?id=${row.original.id}`}>
               <EyeIcon size={16} />
             </Link>
             <Edit2Icon

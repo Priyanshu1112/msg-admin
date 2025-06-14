@@ -8,11 +8,42 @@ export const PUT = catchApiError(
     const { id } = await params;
     const body = await req.json();
 
-      if (!id) CustomError("Id is required to update mind-map.");
+    if (!id) {
+      CustomError("Id is required to update mind-map.");
+    }
 
-    const res = await prisma.mindMap.update({ where: { id }, data: body });
+    // Collect only the allowed fields if they exist
+    const updateData: {
+      name?: string;
+      description?: string | null;
+      mindMap?: string; // Prisma Json accepts any
+    } = {};
 
-    return successResponse(res, "Mindmap updated successfully!");
+    if (typeof body.name === "string" && body.name.trim() !== "") {
+      updateData.name = body.name.trim();
+    }
+
+    if ("description" in body) {
+      // allow null or string
+      updateData.description = body.description ?? null;
+    }
+
+    if ("mindMap" in body) {
+      // If they passed mindMap, we store it as JSON
+      updateData.mindMap = body.mindMap;
+    }
+
+    // If nothing to update, bail
+    if (Object.keys(updateData).length === 0) {
+      CustomError("No updatable fields (name, description, mindMap) provided.");
+    }
+
+    const updated = await prisma.mindMap.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return successResponse(updated, "MindMap updated successfully!");
   }
 );
 

@@ -221,11 +221,13 @@ export default function MindMap({
   onNodeAdd,
   onNodeEdit,
   onNodeDelete,
+  onChange,
 }: {
   initialData: ExtendedMindMapNode;
   onNodeAdd?: (parentId: string) => void;
   onNodeEdit?: (nodeId: string) => void;
   onNodeDelete?: (nodeId: string) => void;
+  onChange?: (data: ExtendedMindMapNode) => void;
 }): JSX.Element {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -338,10 +340,18 @@ export default function MindMap({
     };
 
     updateNode(newData);
-    setData(newData);
+    updateDataAndNotify(newData);
     setNodeEditData(null);
   };
 
+  // Helper function to update data and notify parent
+  const updateDataAndNotify = (newData: ExtendedMindMapNode) => {
+    setData(newData);
+    // Notify parent component of changes
+    if (onChange) {
+      onChange(newData);
+    }
+  };
   // Function to change a node's color and propagate to all children
   const changeNodeColor = (nodeId: string, color: string) => {
     // Create a deep copy of the data to modify
@@ -387,7 +397,7 @@ export default function MindMap({
     };
 
     updateNodeColor(newData);
-    setData(newData);
+    updateDataAndNotify(newData);
     setColorPickerNode(null); // Close the color picker after selection
   };
 
@@ -435,7 +445,7 @@ export default function MindMap({
     };
 
     toggleNode(newData);
-    setData(newData);
+    updateDataAndNotify(newData);
   };
 
   // Function to handle adding a new node with animation
@@ -490,7 +500,7 @@ export default function MindMap({
       };
 
       addChildToNode(newData);
-      setData(newData);
+      updateDataAndNotify(newData);
 
       // After a delay, remove the isNew flag (it's only needed for the animation)
       setTimeout(() => {
@@ -505,7 +515,7 @@ export default function MindMap({
           }
         };
         clearNewFlag(updatedData);
-        setData(updatedData);
+        updateDataAndNotify(updatedData);
       }, 1000); // After animation completes
     }
   };
@@ -555,7 +565,7 @@ export default function MindMap({
       // Don't allow deleting the root node
       if (nodeId !== newData.id) {
         markForDeletion(newData);
-        setData(newData);
+        updateDataAndNotify(newData);
 
         // After animation completes, actually remove the node
         setTimeout(() => {
@@ -583,7 +593,7 @@ export default function MindMap({
           };
 
           removeNode(finalData);
-          setData(finalData);
+          updateDataAndNotify(finalData);
         }, 500); // After fade-out animation completes
       }
     }
@@ -728,25 +738,25 @@ export default function MindMap({
 
     separateNodes(rootNode);
 
-    // --- Create Dagre graphs ---
+    // --- Create Dagre graphs with CONSERVATIVE DISTANCE REDUCTION ---
     const gRight = new dagre.graphlib.Graph();
     const gLeft = new dagre.graphlib.Graph();
 
     gRight.setGraph({
       rankdir: "LR",
-      nodesep: 20,
-      ranksep: 10,
-      marginx: 5,
-      marginy: 5,
+      nodesep: 18,    // Slight reduction from 20 to 18 (vertical spacing)
+      ranksep: 7,     // Conservative reduction from 10 to 7 (horizontal spacing between ranks)
+      marginx: 4,     // Small reduction from 5 to 4 (horizontal margin)
+      marginy: 4,     // Small reduction from 5 to 4 (vertical margin)
       acyclicer: "greedy",
     });
 
     gLeft.setGraph({
       rankdir: "RL",
-      nodesep: 20,
-      ranksep: 10,
-      marginx: 5,
-      marginy: 5,
+      nodesep: 18,    // Slight reduction from 20 to 18 (vertical spacing)
+      ranksep: 7,     // Conservative reduction from 10 to 7 (horizontal spacing between ranks)
+      marginx: 4,     // Small reduction from 5 to 4 (horizontal margin)
+      marginy: 4,     // Small reduction from 5 to 4 (vertical margin)
       acyclicer: "greedy",
     });
 
@@ -873,6 +883,9 @@ export default function MindMap({
     const rightRootPos = gRight.node(rootId) as CustomNodeObject;
     const leftRootPos = gLeft.node(rootId) as CustomNodeObject;
 
+    // NO ADDITIONAL COMPRESSION - Let Dagre handle spacing naturally
+    // const horizontalCompressionFactor = 1.0; // No compression to avoid overlap
+
     // Position right side nodes
     rightNodes.forEach(({ node }) => {
       const id = node.id;
@@ -881,8 +894,8 @@ export default function MindMap({
 
       if (!pos || !originalNode || !rightRootPos) return;
 
-      // Calculate offset from root in the Dagre layout
-      const offsetX = (pos.x - (rightRootPos.x || 0)) * 1.0;
+      // Calculate offset from root in the Dagre layout (NO COMPRESSION)
+      const offsetX = pos.x - (rightRootPos.x || 0); // No compression factor
       const offsetY = pos.y - (rightRootPos.y || 0);
 
       // Position relative to center point
@@ -903,8 +916,8 @@ export default function MindMap({
 
       if (!pos || !originalNode || !leftRootPos) return;
 
-      // Calculate offset from root in the Dagre layout
-      const offsetX = (pos.x - (leftRootPos.x || 0)) * 1.0;
+      // Calculate offset from root in the Dagre layout (NO COMPRESSION)
+      const offsetX = pos.x - (leftRootPos.x || 0); // No compression factor
       const offsetY = pos.y - (leftRootPos.y || 0);
 
       // Position relative to center point
@@ -955,9 +968,9 @@ export default function MindMap({
 
         const path = d3.path();
 
-        // Create curve
+        // Create curve with natural control points
         const dx = targetPos.x - sourcePos.x;
-        const midX = sourcePos.x + dx / 4;
+        const midX = sourcePos.x + dx / 4; // Natural curve control point (original)
 
         const moveToX =
           sourcePos.x +
@@ -986,13 +999,12 @@ export default function MindMap({
 
         // Use the target node's border color for the edge
         const edgeColor = COLOR_SYSTEM[targetPos.node.color].l1Border;
-        // const edgeColor = getBorder(targetPos.node.color, targetPos.node.depth);
 
         const edge = edgeG
           .append("path")
           .attr("d", path.toString())
           .attr("fill", "none")
-          .attr("stroke", edgeColor) // Use the node's border color for the edge
+          .attr("stroke", edgeColor)
           .attr(
             "stroke-width",
             depth == 0 ? 3 : depth == 1 ? 2.5 : depth == 2 ? 1.5 : 1
@@ -1081,7 +1093,6 @@ export default function MindMap({
         .attr("rx", 6)
         .attr("ry", 6)
         .attr("fill", getColor(node.color, node.depth))
-        // .attr("fill", "transparent")
         .attr("stroke", getBorder(node.color, node.depth))
         .attr("stroke-width", node.depth === 0 ? 3 : 2);
 

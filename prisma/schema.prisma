@@ -36,6 +36,18 @@ model AdminAuth {
   updatedAt DateTime @updatedAt
 }
 
+model Faculty {
+  id            String  @id @default(uuid())
+  name          String // e.g., "Dr. Farzana Thaseen"
+  qualification String // e.g., "B.D.S. MFD(RCSI)"
+  bio           String // e.g., full paragraph
+  imageUrl      String? // optional profile picture URL
+  video         Video[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Stream {
   id String @id @default(uuid())
 
@@ -107,12 +119,14 @@ model Topic {
   chapterId String
   chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
-  mindMaps MindMap[]
-  question Question[]
+  mindMaps  MindMap[]
+  question  Question[]
+  bundle    Bundle[]
+  flashCard FlashCard[]
+  video     Video[]
 
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  QuestionBundle QuestionBundle[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // 🎯 KEY CONSTRAINT: Unique topic name within a chapter
   @@unique([name, chapterId])
@@ -134,15 +148,28 @@ model MindMap {
   @@unique([name, topicId])
 }
 
-model QuestionBundle {
-  id        String     @id @default(uuid())
-  name      String
-  topicId   String
-  topic     Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  questions Question[]
+enum BundleType {
+  MindMap
+  MCQ
+  FlashCard
+  Video
+}
+
+model Bundle {
+  id          String      @id @default(uuid())
+  name        String
+  topicId     String
+  topic       Topic       @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  questions   Question[]
+  flashCards  FlashCard[]
+  description String?
+
+  type BundleType
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([name, topicId, type])
 }
 
 model Question {
@@ -154,10 +181,12 @@ model Question {
 
   options Option[]
 
-  explanation      String
-  images           Json?
-  QuestionBundle   QuestionBundle? @relation(fields: [questionBundleId], references: [id])
-  questionBundleId String?
+  explanation String
+  images      Json?
+  tags        String[]
+
+  bundle   Bundle? @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  bundleId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -174,4 +203,53 @@ model Option {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model FlashCard {
+  id String @id @default(uuid())
+
+  question String
+  answer   String
+  images   Json
+  tags     String[]
+
+  topicId String
+  topic   Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Bundle    Bundle?  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  bundleId  String?
+}
+
+model FlashCardBundle {
+  id          String   @id @default(uuid())
+  name        String // Bundle name
+  year        Int // Single year: 1, 2, 3, 4, or 5
+  tags        String[] // Filter tags (e.g., ["anatomy", "important"])
+  description String? // Optional description
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Unique constraint: same name cannot exist for same year
+  @@unique([name, year])
+  @@index([year])
+  @@index([tags])
+}
+
+model Video {
+  id String @id @default(uuid())
+
+  title String
+
+  url     String
+  topic   Topic?  @relation(fields: [topicId], references: [id])
+  topicId String?
+
+  facultyId String
+  faculty   Faculty @relation(fields: [facultyId], references: [id])
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }

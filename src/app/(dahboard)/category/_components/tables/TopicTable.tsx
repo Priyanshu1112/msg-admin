@@ -62,6 +62,10 @@ const TopicTable = () => {
       header: "Questions",
     },
     {
+      accessorKey: "_count.flashCard",
+      header: "Flash cards",
+    },
+    {
       accessorKey: "actions",
       header: () => <p className="text-end pr-2">Actions</p>,
       cell: ({ row }) => {

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { IconInnerShadowTop } from "@tabler/icons-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { FolderDot, GraduationCapIcon } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
@@ -14,11 +14,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import { ChartColumnStacked, HomeIcon, ShieldEllipsis } from "lucide-react";
 import useAppStore from "@/store/app";
-import { Button } from "@/components/ui/button";
 
 const data = {
   user: {
@@ -38,6 +36,16 @@ const data = {
       icon: ChartColumnStacked,
     },
     {
+      title: "Bundle",
+      url: "/bundle",
+      icon: FolderDot,
+    },
+    {
+      title: "Faculty",
+      url: "/faculty",
+      icon: GraduationCapIcon,
+    },
+    {
       title: "Admin",
       url: "/admins",
       icon: ShieldEllipsis,
@@ -54,11 +62,6 @@ export function AppSidebar({
   ...props
 }: AppSidebarProps) {
   const { user } = useAppStore();
-  const { open, setOpen, state } = useSidebar();
-
-  const handleToggle = () => {
-    setOpen(!open);
-  };
 
   return (
     <div className="relative">

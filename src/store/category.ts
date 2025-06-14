@@ -41,6 +41,7 @@ export interface Topic {
   _count: {
     mindMaps: number;
     question: number;
+    flashCard: number;
   };
 }
 

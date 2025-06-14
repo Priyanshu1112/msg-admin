@@ -2,10 +2,9 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { JWT } from "next-auth/jwt";
 import { AuthOptions, Session, User } from "next-auth";
 
-import { createAndStoreSecret, generateOTP, verifyOtp } from "@/utils/otp";
-import { sendSms } from "@/utils/sms";
 import { prisma } from "@/service/prisma";
 import bcrypt from "bcryptjs";
+import { sendAndStoreOTP, verifyOTP } from "@/utils/otp";
 
 export const authOptions: AuthOptions = {
   session: { strategy: "jwt" },
@@ -18,9 +17,7 @@ export const authOptions: AuthOptions = {
         otp: { label: "OTP", type: "text" },
       },
       async authorize(
-        credentials:
-          | Record<"username" | "password" | "otp", string>
-          | undefined,
+        credentials: Record<"username" | "password" | "otp", string> | undefined
       ) {
         if (!credentials) {
           throw new Error("Missing credentials");
@@ -42,7 +39,7 @@ export const authOptions: AuthOptions = {
 
         // 1️⃣ OTP step:
         if (otp != "undefined") {
-          const valid = await verifyOtp(user.id, otp);
+          const valid = await verifyOTP(user.id, otp);
           if (!valid) throw new Error("Invalid OTP");
           // ✔️ OTP ok → return user to finish sign‑in
           return {
@@ -56,15 +53,12 @@ export const authOptions: AuthOptions = {
         // 2️⃣ First factor: username + password
         const pwOk = await bcrypt.compare(
           password,
-          user.adminAuth?.password ?? "",
+          user.adminAuth?.password ?? ""
         );
         if (!pwOk) throw new Error("Invalid credentials!");
 
         // Generate & SMS OTP, then tell client we need OTP
-        const secret = await createAndStoreSecret(user.id);
-        const code = generateOTP(secret);
-
-        await sendSms(user.phone, `Your login code is ${code}`);
+        await sendAndStoreOTP(user.phone, user.id);
 
         // signal client to show OTP form
         throw new Error(`OTP_REQUIRED:${user.phone.slice(-4)}`);

@@ -14,9 +14,11 @@ import { Button } from "@/components/ui/button";
 
 import MindMapTable from "../tables/MindMapTable";
 import { Input } from "@/components/ui/input";
-import AddMindMap from "./AddMindMap";
-import Questions from "./Questions";
-import AddQuestion from "./AddQuestion";
+import QuestionTable from "../tables/QuestionTable";
+import AddContentSheet, { ContentType } from "./AddContentSheet";
+import FcTable from "../tables/FcTable";
+import AddVideo from "./AddVideo";
+import Videos from "../Videos";
 
 interface AddContentProps {
   topic: {
@@ -28,21 +30,29 @@ interface AddContentProps {
 
 const AddContent = ({ topic, children }: AddContentProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [mmOpen, setMmOpen] = useState(false);
-  const [questionOpen, setQuestionOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [addVideo, setAddVideo] = useState(false);
   const [tab, setTab] = useState("mindmap");
   const inputFileRef = useRef<HTMLInputElement | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedFiles(e.target.files);
-  };
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-  useEffect(() => {
-    if (selectedFiles)
-      if (tab == "mindmap") setMmOpen(true);
-      else if (tab == "questions") setQuestionOpen(true);
-  }, [selectedFiles, tab]);
+    // Clone FileList to prevent issues when resetting the input
+    const fileArray = Array.from(files);
+    const dataTransfer = new DataTransfer();
+    fileArray.forEach((file) => dataTransfer.items.add(file));
+
+    setSelectedFiles(dataTransfer.files);
+    setSheetOpen(true);
+
+    // Reset the input value to allow re-selection of the same file
+    if (inputFileRef.current) {
+      inputFileRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     setSelectedFiles(null);
@@ -72,11 +82,14 @@ const AddContent = ({ topic, children }: AddContentProps) => {
               <TabsTrigger className="cursor-pointer" value="mindmap">
                 Mind Map
               </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="questions">
+              <TabsTrigger className="cursor-pointer" value="question">
                 Questions
               </TabsTrigger>
-              <TabsTrigger className="cursor-pointer" value="flashcards">
+              <TabsTrigger className="cursor-pointer" value="flashcard">
                 Flash Cards
+              </TabsTrigger>
+              <TabsTrigger className="cursor-pointer" value="video">
+                Video
               </TabsTrigger>
             </TabsList>
             <Button
@@ -84,12 +97,16 @@ const AddContent = ({ topic, children }: AddContentProps) => {
               variant={"outline"}
               className="cursor-pointer"
               onClick={() => {
-                if (inputFileRef.current) inputFileRef.current?.click();
+                if (tab == "video") {
+                  setAddVideo(true);
+                } else if (inputFileRef.current) inputFileRef.current?.click();
               }}
             >
               Add {tab}
             </Button>
           </div>
+
+          <AddVideo topicId={topic.id} open={addVideo} setOpen={setAddVideo} />
 
           <Input
             ref={inputFileRef}
@@ -104,23 +121,25 @@ const AddContent = ({ topic, children }: AddContentProps) => {
             <MindMapTable topicId={topic.id} />
           </TabsContent>
 
-          <TabsContent value="questions">
-            <Questions topicId={topic.id} />
+          <TabsContent value="question">
+            <QuestionTable topicId={topic.id} />
+          </TabsContent>
+
+          <TabsContent value="flashcard">
+            <FcTable topicId={topic.id} />
+          </TabsContent>
+
+          <TabsContent value="video">
+            <Videos topicId={topic.id} />
           </TabsContent>
         </Tabs>
 
-        <AddMindMap
-          open={mmOpen}
-          setOpen={setMmOpen}
+        <AddContentSheet
+          open={sheetOpen}
+          setOpen={setSheetOpen}
           selectedFiles={selectedFiles}
           topicId={topic.id}
-        />
-
-        <AddQuestion
-          open={questionOpen}
-          setOpen={setQuestionOpen}
-          selectedFiles={selectedFiles}
-          topicId={topic.id}
+          type={tab as ContentType}
         />
       </SheetContent>
     </Sheet>
@@ -128,3 +147,42 @@ const AddContent = ({ topic, children }: AddContentProps) => {
 };
 
 export default AddContent;
+
+// function convertToEmbeddedLink(youtubeUrl) {
+//   try {
+//     const url = new URL(youtubeUrl);
+
+//     // Handle youtu.be short links
+//     if (url.hostname === "youtu.be") {
+//       const videoId = url.pathname.slice(1); // Remove leading /
+//       return `https://www.youtube.com/embed/${videoId}`;
+//     }
+
+//     // Handle full youtube.com URLs
+//     if (url.hostname.includes("youtube.com") && url.searchParams.has("v")) {
+//       const videoId = url.searchParams.get("v");
+//       return `https://www.youtube.com/embed/${videoId}`;
+//     }
+
+//     return null;
+//   } catch (e) {
+//     console.error("Invalid URL", e);
+//     return null;
+//   }
+// }
+
+// // Example usage:
+// const embeddedLink = convertToEmbeddedLink(
+//  "https://youtu.be/hA2TJKJFsoE?si=GJCiw33HXdXAw9Jc"
+// );
+
+{
+  /* <iframe
+          // src="https://www.youtube.com/embed/2NjCWKlhxPY"
+          src={embeddedLink}
+          title="YouTube video player"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="w-[350px] h-[200px]"
+        ></iframe> */
+}
