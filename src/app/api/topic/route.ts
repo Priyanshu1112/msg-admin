@@ -12,7 +12,14 @@ export const GET = catchApiError(async () => {
       chapter: {
         select: { id: true, name: true },
       },
-      _count: { select: { mindMaps: true, question: true, flashCard: true } },
+      _count: {
+        select: {
+          mindMaps: true,
+          question: true,
+          flashCard: true,
+          video: true,
+        },
+      },
     },
     orderBy: {
       name: "asc",
@@ -54,6 +61,8 @@ export const POST = catchApiError(async (req: NextRequest) => {
               select: {
                 mindMaps: true,
                 question: true,
+                flashCard: true,
+                video: true,
               },
             },
           },

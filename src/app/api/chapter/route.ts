@@ -1,18 +1,23 @@
 import { prisma } from "@/service/prisma";
 import { catchApiError } from "../_utils/catchApiError";
 import { NextRequest, NextResponse } from "next/server";
-import { successResponse } from "../_utils/Response";
 import { reduceSubject } from "../subject/route";
+import { successResponse } from "../_utils/Response";
 
+// Properly typed reducer
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const reduceChapter = (chapter: any) => {
   let totalMindmaps = 0;
   let totalQuestions = 0;
+  let totalFlashcards = 0;
+  let totalVideos = 0;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   chapter.topics.forEach((topic: any) => {
     totalMindmaps += topic._count.mindMaps;
     totalQuestions += topic._count.question;
+    totalFlashcards += topic._count.flashCard;
+    totalVideos += topic._count.video;
   });
 
   return {
@@ -23,46 +28,63 @@ export const reduceChapter = (chapter: any) => {
       topics: chapter._count.topics,
       mindMaps: totalMindmaps,
       questions: totalQuestions,
+      flashcards: totalFlashcards,
+      videos: totalVideos,
     },
   };
 };
 
-export const GET = catchApiError(async () => {
-  const rawChapters = await prisma.chapter.findMany({
-    select: {
-      id: true,
-      name: true,
-      subject: {
-        select: {
-          id: true,
-          name: true,
+export const GET = catchApiError(async (req) => {
+  const { searchParams } = new URL(req.url);
+  const pageParam = parseInt(searchParams.get("pageNumber") || "1", 10);
+  const pageSize = 10;
+  const skip = (pageParam - 1) * pageSize;
+
+  const [chaptersRaw, totalChapters] = await Promise.all([
+    prisma.chapter.findMany({
+      skip,
+      take: pageSize,
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        subject: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
-      },
-      _count: {
-        select: { topics: true },
-      },
-      topics: {
-        select: {
-          _count: {
-            select: {
-              mindMaps: true,
-              question: true,
+        _count: {
+          select: { topics: true },
+        },
+        topics: {
+          select: {
+            _count: {
+              select: {
+                mindMaps: true,
+                question: true,
+                flashCard: true,
+                video: true,
+              },
             },
           },
         },
       },
-    },
-    orderBy: {
-      name: "asc",
-    },
-    take: 10,
-  });
+    }),
+    prisma.chapter.count(),
+  ]);
 
-  const chapters = rawChapters.map((chapter) => {
-    return reduceChapter(chapter);
-  });
+  const chapters = chaptersRaw.map(reduceChapter);
 
-  return NextResponse.json({ success: true, data: chapters });
+  return NextResponse.json({
+    success: true,
+    data: chapters,
+    meta: {
+      currentPage: pageParam,
+      totalChapters,
+      totalPages: Math.ceil(totalChapters / pageSize),
+    },
+  });
 });
 
 export const POST = catchApiError(async (req: NextRequest) => {
@@ -85,9 +107,7 @@ export const POST = catchApiError(async (req: NextRequest) => {
         country: true,
         stream: { select: { id: true, name: true } },
         course: { select: { id: true, name: true } },
-        _count: {
-          select: { chapters: true },
-        },
+        _count: { select: { chapters: true } },
         chapters: {
           select: {
             _count: { select: { topics: true } },
@@ -97,6 +117,8 @@ export const POST = catchApiError(async (req: NextRequest) => {
                   select: {
                     mindMaps: true,
                     question: true,
+                    flashCard: true,
+                    video: true,
                   },
                 },
               },

@@ -13,8 +13,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import NothingFound from "@/app/_components/NothingFound";
-import { useEffect, useState } from "react";
-import { Edit2Icon, Trash2, EyeIcon } from "lucide-react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Edit2Icon, Trash2, EyeIcon, Loader2 } from "lucide-react";
+import CreateBundle from "./CreateBundle";
+import { fetchDELETE } from "@/store/_utils/fetchHelp";
 
 interface FCBundle {
   id: string;
@@ -26,15 +28,22 @@ interface FCBundle {
   flashCardCount: number;
 }
 
-const FCBundleTable = () => {
-  const [bundles, setBundles] = useState<FCBundle[]>([]);
+const FCBundleTable = ({
+  bundles,
+  setBundles,
+}: {
+  bundles: FCBundle[];
+  setBundles: Dispatch<SetStateAction<FCBundle[]>>;
+}) => {
+  const [activeBundle, setActiveBundle] = useState<FCBundle>();
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string>("");
 
   const fetchBundles = async () => {
     try {
       const res = await fetch("/api/flashcard-bundle");
       const json = await res.json();
-
       if (json.success && json.data?.bundles) {
         setBundles(json.data.bundles);
       }
@@ -48,6 +57,23 @@ const FCBundleTable = () => {
   useEffect(() => {
     fetchBundles();
   }, []);
+
+  const handleDelete = async (id: string) => {
+    const confrim = window.confirm(
+      "Are you sure you want to delete this bundle? This action cannot be undone."
+    );
+
+    if (!confrim) return;
+
+    setDeleteId(id);
+    const res = await fetchDELETE("/api/flashcard-bundle/" + id);
+    if (res.success) {
+      setBundles((prev) => prev.filter((bundle) => bundle.id !== id));
+    } else {
+      alert("Failed to delete bundle");
+    }
+    setDeleteId("");
+  };
 
   const bundleColumns: ColumnDef<FCBundle>[] = [
     {
@@ -88,26 +114,30 @@ const FCBundleTable = () => {
       header: () => <p className="text-end pr-2">Actions</p>,
       cell: ({ row }) => (
         <div className="flex gap-2 items-center justify-end pr-2">
-          <EyeIcon
-            size={16}
-            className="cursor-pointer"
-            onClick={() => {
-              // hook this up to open flashcards later
-              alert(`View flashcards in bundle: ${row.original.name}`);
-            }}
-          />
+          {/* <EyeIcon
+              size={16}
+              className="cursor-pointer"
+              onClick={() =>
+                alert(`View flashcards in bundle: ${row.original.name}`)
+              }
+            /> */}
           <Edit2Icon
             size={16}
             className="cursor-pointer"
-            onClick={() => alert(`Edit form for ${row.original.name}`)}
-          />
-          <Trash2
-            size={16}
-            className="cursor-pointer text-red-600"
             onClick={() => {
-              // no-op for now
+              setActiveBundle(row.original);
+              setEditOpen(true);
             }}
           />
+          {deleteId === row.original.id ? (
+            <Loader2 size={16} className="animate-spin text-red-600" />
+          ) : (
+            <Trash2
+              size={16}
+              className="cursor-pointer text-red-600"
+              onClick={() => handleDelete(row.original.id)}
+            />
+          )}
         </div>
       ),
     },
@@ -164,6 +194,15 @@ const FCBundleTable = () => {
           )}
         </TableBody>
       </Table>
+
+      <CreateBundle
+        isEdit={true}
+        bundle={activeBundle}
+        trigger={false}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        setBundles={setBundles}
+      />
     </div>
   );
 };

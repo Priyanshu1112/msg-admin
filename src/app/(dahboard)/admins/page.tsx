@@ -2,19 +2,18 @@
 
 import { Input } from "@/components/ui/input";
 import React, { useState } from "react";
-import CreateBundle from "./_components/CreateBundle";
-import FCBundleTable from "./_components/FcBundleTable";
-import { FcBundle } from "@/store/content";
+import AdminTable from "./_components/AdminTable";
+import CreateAdmin from "./_components/CreateAdmin";
+import { Button } from "@/components/ui/button";
+import { PlusIcon } from "lucide-react";
 
 const Page = () => {
   const [search, setSearch] = useState("");
-  const [open, setOpen] = useState(false);
-  const [bundles, setBundles] = useState<FcBundle[]>([]);
 
   return (
     <div className="px-2">
       <h1 className="capitalize text-3xl py-3 px-2 bg-gray-100 rounded-md mb-4">
-        Flashcard Bundles
+        Admins
       </h1>
 
       <div className="flex gap-4 pb-4 items-center justify-end w-[400px] ml-auto">
@@ -23,14 +22,15 @@ const Page = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <CreateBundle
-          onOpenChange={setOpen}
-          open={open}
-          setBundles={setBundles}
-        />
+
+        <CreateAdmin>
+          <Button size="icon" variant="outline" className="cursor-pointer">
+            <PlusIcon size={16} />
+          </Button>
+        </CreateAdmin>
       </div>
 
-      <FCBundleTable bundles={bundles} setBundles={setBundles} />
+      <AdminTable />
     </div>
   );
 };

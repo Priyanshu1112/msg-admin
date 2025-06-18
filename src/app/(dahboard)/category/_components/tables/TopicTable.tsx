@@ -1,4 +1,4 @@
-import useCategoryStore, { Topic } from "@/store/category";
+import useCategoryStore from "@/store/category";
 import {
   useReactTable,
   getCoreRowModel,
@@ -64,6 +64,10 @@ const TopicTable = () => {
     {
       accessorKey: "_count.flashCard",
       header: "Flash cards",
+    },
+    {
+      accessorKey: "_count.video",
+      header: "Videos",
     },
     {
       accessorKey: "actions",

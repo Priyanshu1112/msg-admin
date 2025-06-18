@@ -8,6 +8,10 @@ export async function catchStoreError<T, A extends any[]>(
   try {
     return await fn(...args);
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return;
+    }
+
     const { setError } = useAppStore.getState(); // access the store outside React
     const message =
       error instanceof Error ? error?.message : "Unexpected error";

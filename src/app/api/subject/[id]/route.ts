@@ -40,8 +40,6 @@ export const PUT = catchApiError(
       }
     }
 
-    console.log(data);
-
     const res = await prisma.subject.update({
       where: { id },
       data: data,

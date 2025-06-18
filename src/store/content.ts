@@ -210,12 +210,12 @@ const useContentStore = create<ContentState>((set, get) => ({
           const updatedTopics = topics.map((topic) =>
             topic.id === topicId
               ? {
-                  ...topic,
-                  _count: {
-                    ...topic._count,
-                    mindMaps: topic._count.mindMaps + mindMaps.length,
-                  },
-                }
+                ...topic,
+                _count: {
+                  ...topic._count,
+                  mindMaps: topic._count.mindMaps + mindMaps.length,
+                },
+              }
               : topic
           );
           useCategoryStore.setState({ topics: updatedTopics });
@@ -244,12 +244,12 @@ const useContentStore = create<ContentState>((set, get) => ({
           const updatedTopics = topics.map((topic) =>
             topic.id === topicId
               ? {
-                  ...topic,
-                  _count: {
-                    ...topic._count,
-                    question: topic._count.question + questions.length,
-                  },
-                }
+                ...topic,
+                _count: {
+                  ...topic._count,
+                  question: topic._count.question + questions.length,
+                },
+              }
               : topic
           );
           useCategoryStore.setState({ topics: updatedTopics });
@@ -282,12 +282,12 @@ const useContentStore = create<ContentState>((set, get) => ({
           const updatedTopics = topics.map((topic) =>
             topic.id === topicId
               ? {
-                  ...topic,
-                  _count: {
-                    ...topic._count,
-                    question: topic._count.question + totalQuestions,
-                  },
-                }
+                ...topic,
+                _count: {
+                  ...topic._count,
+                  question: topic._count.question + totalQuestions,
+                },
+              }
               : topic
           );
           useCategoryStore.setState({ topics: updatedTopics });

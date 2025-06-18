@@ -1,4 +1,4 @@
-import useCategoryStore, { Subject } from "@/store/category";
+import useCategoryStore from "@/store/category";
 import {
   useReactTable,
   getCoreRowModel,
@@ -96,6 +96,14 @@ const SubjectTable = () => {
     {
       accessorKey: "_count.questions",
       header: "Questions",
+    },
+    {
+      accessorKey: "_count.flashcards",
+      header: "Flashcards",
+    },
+    {
+      accessorKey: "_count.videos",
+      header: "Videos",
     },
     {
       accessorKey: "actions",

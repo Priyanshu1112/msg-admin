@@ -1,4 +1,4 @@
-import useCategoryStore, { Chapter } from "@/store/category";
+import useCategoryStore from "@/store/category";
 import {
   useReactTable,
   getCoreRowModel,
@@ -63,6 +63,14 @@ const ChapterTable = () => {
     {
       accessorKey: "_count.questions",
       header: "Questions",
+    },
+    {
+      accessorKey: "_count.flashcards",
+      header: "Flashcards",
+    },
+    {
+      accessorKey: "_count.videos",
+      header: "Videos",
     },
     {
       accessorKey: "actions",

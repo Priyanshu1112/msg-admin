@@ -122,46 +122,22 @@ export const PUT = catchApiError(
 
 export const DELETE = catchApiError(
   async (request: NextRequest, { params }: { params: { id: string } }) => {
-    const { searchParams } = new URL(request.url);
-    const permanent = searchParams.get("permanent") === "true";
+    const bundleId = params.id;
 
-    // Check if bundle exists
-    const bundle = await prisma.flashCardBundle.findFirst({
-      where: {
-        id: params.id,
-      },
+    // Check if the bundle exists
+    const existingBundle = await prisma.flashCardBundle.findUnique({
+      where: { id: bundleId },
     });
 
-    if (!bundle) {
+    if (!existingBundle) {
       CustomError("Bundle not found!");
     }
 
-    if (permanent) {
-      // Hard delete - permanently remove from database
-      await prisma.flashCardBundle.delete({
-        where: { id: params.id },
-      });
+    // Delete the bundle
+    await prisma.flashCardBundle.delete({
+      where: { id: bundleId },
+    });
 
-      return successResponse(
-        {
-          deletedId: params.id,
-          deletionType: "permanent",
-        },
-        "Bundle permanently deleted successfully!"
-      );
-    } else {
-      // Soft delete - set isActive to false
-      await prisma.flashCardBundle.update({
-        where: { id: params.id },
-      });
-
-      return successResponse(
-        {
-          deletedId: params.id,
-          deletionType: "soft",
-        },
-        "Bundle deleted successfully!"
-      );
-    }
+    return successResponse({}, "Bundle deleted successfully!");
   }
 );

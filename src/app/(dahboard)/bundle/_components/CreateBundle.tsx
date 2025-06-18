@@ -1,5 +1,12 @@
 // CreateBundle.tsx
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -33,6 +40,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Loader from "@/app/_components/Loader";
 import { X, Plus, PlusIcon } from "lucide-react";
+import { fetchPOST } from "@/store/_utils/fetchHelp";
+import { FcBundle } from "@/store/content";
 
 // Schema for bundle creation
 const bundleSchema = z.object({
@@ -91,8 +100,12 @@ const TagInput = ({
   const addTag = useCallback(
     (tag: string) => {
       const trimmedTag = tag.trim();
+      const isAllowed = allTags.some(
+        (allowedTag) => allowedTag.toLowerCase() === trimmedTag.toLowerCase()
+      );
       if (
         trimmedTag &&
+        isAllowed &&
         !currentTags.some((t) => t.toLowerCase() === trimmedTag.toLowerCase())
       ) {
         onAddTag(trimmedTag);
@@ -100,7 +113,7 @@ const TagInput = ({
         setShowSuggestions(false);
       }
     },
-    [currentTags, onAddTag, onTagInputChange]
+    [currentTags, allTags, onAddTag, onTagInputChange]
   );
 
   const handleInputChange = (value: string) => {
@@ -182,8 +195,8 @@ const TagInput = ({
 
       {/* Helper text */}
       <p className="text-xs text-gray-500">
-        Type and press Enter or click + to add tags. Suggestions will appear as
-        you type.
+        Type to search and select tags from available suggestions. Only existing
+        tags can be added.
       </p>
     </div>
   );
@@ -263,26 +276,31 @@ export interface BundleFormProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: boolean;
+  isEdit?: boolean;
+  bundle?: any;
+  setBundles?: Dispatch<SetStateAction<FcBundle[]>>;
 }
 
 const CreateBundle = ({
   open = false,
   onOpenChange,
   trigger = true,
+  isEdit = false,
+  bundle = null,
+  setBundles,
 }: BundleFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
-  const [isOpen, setIsOpen] = useState(open);
   const [tagInput, setTagInput] = useState(""); // Add this state for TagInput
 
   const form = useForm<z.infer<typeof bundleSchema>>({
     resolver: zodResolver(bundleSchema),
     defaultValues: {
-      name: "",
-      year: undefined,
-      tags: [],
-      description: "",
+      name: bundle?.name ?? "",
+      year: bundle?.year ?? undefined,
+      tags: bundle?.tags ?? [],
+      description: bundle?.description ?? "",
     },
   });
 
@@ -290,16 +308,9 @@ const CreateBundle = ({
   const watchedYear = form.watch("year");
   const watchedTags = form.watch("tags") || [];
 
-  // Handle external open/close control
+  // Reset form when sheet opens for creation
   useEffect(() => {
-    if (onOpenChange) {
-      onOpenChange(isOpen);
-    }
-  }, [isOpen, onOpenChange]);
-
-  // Reset form when sheet opens
-  useEffect(() => {
-    if (isOpen) {
+    if (open && !isEdit) {
       form.reset({
         name: "",
         year: undefined,
@@ -307,7 +318,19 @@ const CreateBundle = ({
         description: "",
       });
     }
-  }, [isOpen, form]);
+  }, [open, isEdit, form]);
+
+  // Reset form when editing
+  useEffect(() => {
+    if (isEdit && bundle) {
+      form.reset({
+        name: bundle.name || "",
+        year: bundle.year || undefined,
+        tags: bundle.tags || [],
+        description: bundle.description || "",
+      });
+    }
+  }, [isEdit, bundle, form]);
 
   // Fetch tags from API with debouncing
   const fetchTags = useCallback(async (searchTerm: string) => {
@@ -380,29 +403,51 @@ const CreateBundle = ({
   const onSubmit = async (data: z.infer<typeof bundleSchema>) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/flashcard-bundle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const response = await fetch(
+        isEdit ? `/api/flashcard-bundle/${bundle.id}` : "/api/flashcard-bundle",
+        {
+          method: isEdit ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }
+      );
 
-      if (response.ok) {
-        const result = await response.json();
+      const result = await response.json();
+
+      if (!response.ok) throw new Error(result.message || "Request failed");
+
+      if (isEdit) {
+        alert(result.message);
+        if (setBundles) {
+          setBundles((prev) =>
+            prev.map((b) =>
+              b.id === bundle.id ? { ...b, ...result.data.bundle } : b
+            )
+          );
+        }
+      } else {
         alert(
           `Bundle created successfully! ${
             result.data.preview?.matchingFlashCardCount || 0
           } flashcards match your criteria.`
         );
-        setIsOpen(false);
-        form.reset();
-      } else {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create bundle");
+        if (setBundles) {
+          setBundles((prev) => [
+            {
+              ...result.data.bundle,
+              flashCardCount: result.data.preview.matchingFlashCardCount,
+            },
+            ...prev,
+          ]);
+        }
       }
+
+      form.reset();
+      if (onOpenChange) onOpenChange(false);
     } catch (error) {
       alert(
         `Error: ${
-          error instanceof Error ? error.message : "Failed to create bundle"
+          error instanceof Error ? error.message : "Failed to submit bundle"
         }`
       );
     } finally {
@@ -411,13 +456,15 @@ const CreateBundle = ({
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       {trigger && (
         <ToolTip content="Create FlashCard Bundle">
           <SheetTrigger asChild>
-            <Button size="icon" variant="outline" className="cursor-pointer">
-              <PlusIcon size={16} />
-            </Button>
+            {trigger && (
+              <Button size="icon" variant="outline" className="cursor-pointer">
+                <PlusIcon size={16} />
+              </Button>
+            )}
           </SheetTrigger>
         </ToolTip>
       )}
@@ -560,7 +607,7 @@ const CreateBundle = ({
               className="flex-1"
               disabled={isSubmitting}
             >
-              {isSubmitting ? <Loader /> : "Create Bundle"}
+              {isSubmitting ? <Loader /> : isEdit ? "Edit" : "Create Bundle"}
             </Button>
           </div>
         </SheetFooter>
