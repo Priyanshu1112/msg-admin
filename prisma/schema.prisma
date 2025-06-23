@@ -254,3 +254,29 @@ model Video {
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 }
+
+model User {
+  id String @id @default(uuid())
+
+  name     String?
+  stream   Stream?    @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  streamId String?
+  phone    String    @unique
+  year     Int?
+  userAuth UserAuth?
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model UserAuth {
+  id String @id @default(uuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  otpSecret String? // OTP for verification
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
