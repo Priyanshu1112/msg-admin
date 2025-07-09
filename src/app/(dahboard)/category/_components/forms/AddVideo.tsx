@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PlusIcon, Trash2 } from "lucide-react";
+import {  Trash2 } from "lucide-react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -60,8 +60,8 @@ const AddVideo = ({
   const { faculties, fetchFaculties } = useFacultyStore();
 
   useEffect(() => {
-    if (faculties.length == 0) fetchFaculties();
-  }, [faculties, fetchFaculties]);
+    fetchFaculties();
+  }, [fetchFaculties]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),

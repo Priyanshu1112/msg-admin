@@ -20,9 +20,10 @@ import { DeleteCategoryDialog } from "../DeleteDialog";
 import { Button } from "@/components/ui/button";
 import AddCategory from "../forms/AddCategory";
 import AddContent from "../forms/AddContent";
+import { TableLoader } from "@/app/_components/Loader";
 
 const TopicTable = () => {
-  const { topics, fetchTopics, setActiveTopicId, deleteTopic } =
+  const { topics, fetchTopics, setActiveTopicId, deleteTopic, loadingTopics } =
     useCategoryStore();
   // const [open, setOpen] = useState(false);
   const [deleteId, setDeleteId] = useState("");
@@ -136,7 +137,9 @@ const TopicTable = () => {
           ))}
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows?.length ? (
+          {loadingTopics ? (
+            <TableLoader colSpan={topicColumn.length} />
+          ) : table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}

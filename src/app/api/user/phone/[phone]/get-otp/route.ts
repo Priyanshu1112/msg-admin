@@ -1,6 +1,7 @@
 import { catchApiError } from "@/app/api/_utils/catchApiError";
 import { successResponse } from "@/app/api/_utils/Response";
 import { prisma } from "@/service/prisma";
+import { CoinSource } from "@prisma/client";
 import { NextRequest } from "next/server";
 
 export const GET = catchApiError(
@@ -10,7 +11,6 @@ export const GET = catchApiError(
   ) => {
     const { phone } = await params;
 
-    // Normalize to E.164 for India
     const e164 = phone.startsWith("+") ? phone : `+91${phone}`;
 
     const user = await prisma.user.findUnique({
@@ -18,7 +18,6 @@ export const GET = catchApiError(
       include: { userAuth: true },
     });
 
-    // Request OTP from 2Factor
     const url = `https://2factor.in/API/V1/${
       process.env.NEXT_PUBLIC_2FACTOR_SECRET
     }/SMS/${encodeURIComponent(e164)}/AUTOGEN`;
@@ -38,6 +37,12 @@ export const GET = catchApiError(
           phone: e164,
           userAuth: {
             create: { otpSecret },
+          },
+          coinTransaction: {
+            create: {
+              source: CoinSource.Reward,
+              amount: 200,
+            },
           },
         },
       });

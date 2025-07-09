@@ -12,3 +12,5 @@ interface MindMapNode {
   children?: MindMapNode[];
   _children?: MindMapNode[]; // For collapsed nodes
 }
+
+type category = "subject" | "topic" | "chapter";

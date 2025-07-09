@@ -39,6 +39,7 @@ const Videos = ({ topicId }: { topicId: string }) => {
               <iframe
                 className="rounded-t-md w-full aspect-video"
                 src={video.url}
+                allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
                 allowFullScreen
               />
             </CardContent>

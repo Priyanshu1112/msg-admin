@@ -8,7 +8,6 @@ import StreamsCourses from "./StreamsCourses";
 import AddCategory from "./forms/AddCategory";
 import CategoryTable from "./tables/Table";
 
-export type category = "subject" | "topic" | "chapter";
 
 const Category = () => {
   const router = useRouter();

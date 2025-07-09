@@ -10,273 +10,362 @@ datasource db {
 }
 
 model Admin {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  phone     String   @unique
-  email     String   @unique
+  id        String     @id @default(uuid())
+  username  String     @unique
+  phone     String     @unique
+  email     String     @unique
   fullName  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  adminAuth AdminAuth? @relation
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  adminAuth AdminAuth?
 }
 
 model AdminAuth {
-  id      String @id @default(uuid())
-  adminId String @unique
-  admin   Admin  @relation(fields: [adminId], references: [id], onDelete: Cascade)
-
-  password     String // The hashed password for the admin
-  otp          String? // OTP for verification
-  otpExpiresAt DateTime? // Timestamp for OTP expiration
-
-  // JWT Token or other auth-related fields (Optional)
-  token     String? // The JWT token
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String    @id @default(uuid())
+  adminId      String    @unique
+  password     String
+  otp          String?
+  otpExpiresAt DateTime?
+  token        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  admin        Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
 }
 
 model Faculty {
-  id            String  @id @default(uuid())
-  name          String // e.g., "Dr. Farzana Thaseen"
-  qualification String // e.g., "B.D.S. MFD(RCSI)"
-  bio           String // e.g., full paragraph
-  imageUrl      String? // optional profile picture URL
+  id            String   @id @default(uuid())
+  name          String
+  qualification String
+  bio           String
+  imageUrl      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   video         Video[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Stream {
-  id String @id @default(uuid())
-
-  name String @unique
-
-  course  Course[]
-  subject Subject[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String    @id @default(uuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  course    Course[]
+  subject   Subject[]
   User      User[]
 }
 
 model Course {
-  id String @id @default(uuid())
+  id        String    @id @default(uuid())
+  name      String
+  streamId  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  stream    Stream?   @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  subject   Subject[]
 
-  name String
-
-  stream   Stream? @relation(fields: [streamId], references: [id], onDelete: Cascade)
-  streamId String?
-
-  subject Subject[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Ensure unique course names within a stream
   @@unique([name, streamId])
 }
 
 model Subject {
-  id String @id @default(uuid())
-
-  name String @unique
-
-  chapters Chapter[]
-  year     Int[]
-  country  String
-
-  stream   Stream  @relation(fields: [streamId], references: [id], onDelete: Cascade)
-  streamId String
-  course   Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  courseId String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String                @id @default(uuid())
+  name                String                @unique
+  year                Int[]
+  country             String
+  streamId            String
+  courseId            String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  chapters            Chapter[]
+  course              Course?               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  stream              Stream                @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  userUnlockedSubject UserUnlockedSubject[]
 }
 
 model Chapter {
-  id String @id @default(uuid())
-
-  name String
-
+  id        String   @id @default(uuid())
+  name      String
   subjectId String
-  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  topics    Topic[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topics    Topic[]
 
-  // 🎯 KEY CONSTRAINT: Unique chapter name within a subject
   @@unique([name, subjectId])
 }
 
 model Topic {
-  id String @id @default(uuid())
-
-  name String
-
+  id        String @id @default(uuid())
+  name      String
   chapterId String
-  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
-  mindMaps  MindMap[]
-  question  Question[]
-  bundle    Bundle[]
-  flashCard FlashCard[]
-  video     Video[]
+  bundle               Bundle[]
+  flashCard            FlashCard[]
+  mindMaps             MindMap[]
+  question             Question[]
+  chapter              Chapter                @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  video                Video[]
+  relatedFrom          RelatedTopic[]         @relation("FromTopic")
+  relatedTo            RelatedTopic[]         @relation("ToTopic")
+  userCompletedContent UserCompletedContent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // 🎯 KEY CONSTRAINT: Unique topic name within a chapter
   @@unique([name, chapterId])
 }
 
-model MindMap {
-  id String @id @default(uuid())
+model RelatedTopic {
+  id     String @id @default(uuid())
+  fromId String
+  toId   String
 
-  mindMap     Json?
-  name        String
-  description String?
-
-  topicId String
-  topic   Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  from Topic @relation("FromTopic", fields: [fromId], references: [id], onDelete: Cascade)
+  to   Topic @relation("ToTopic", fields: [toId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([name, topicId])
+  @@unique([fromId, toId])
+  @@index([fromId])
+  @@index([toId])
 }
 
-enum BundleType {
-  MindMap
-  MCQ
-  FlashCard
-  Video
+model MindMap {
+  id          String   @id @default(uuid())
+  mindMap     Json?
+  topicId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  description String?
+  name        String
+  topic       Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([name, topicId])
 }
 
 model Bundle {
   id          String      @id @default(uuid())
   name        String
   topicId     String
-  topic       Topic       @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  questions   Question[]
-  flashCards  FlashCard[]
+  type        ContentType
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   description String?
-
-  type BundleType
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  topic       Topic       @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  flashCards  FlashCard[]
+  questions   Question[]
 
   @@unique([name, topicId, type])
 }
 
 model Question {
-  id String @id @default(uuid())
-
-  text    String
-  topicId String
-  topic   Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
-
-  options Option[]
-
+  id          String @id @default(uuid())
+  text        String
+  topicId     String
   explanation String
   images      Json?
-  tags        String[]
 
-  bundle   Bundle? @relation(fields: [bundleId], references: [id], onDelete: Cascade)
-  bundleId String?
+  bundleId        String?
+  tags            String[]
+  options         Option[]
+  bundle          Bundle?           @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  topic           Topic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  userMCQResponse UserMCQResponse[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Option {
-  id String @id @default(uuid())
-
-  text      String
-  isCorrect Boolean
-
+  id         String   @id @default(uuid())
+  text       String
+  isCorrect  Boolean
   questionId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model FlashCard {
-  id String @id @default(uuid())
-
-  question String
-  answer   String
-  images   Json
-  tags     String[]
-
-  topicId String
-  topic   Topic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
-
+  id        String   @id @default(uuid())
+  question  String
+  answer    String
+  images    Json
+  tags      String[]
+  topicId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  Bundle    Bundle?  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
   bundleId  String?
+  Bundle    Bundle?  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
 }
 
 model FlashCardBundle {
   id          String   @id @default(uuid())
-  name        String // Bundle name
-  year        Int // Single year: 1, 2, 3, 4, or 5
-  tags        String[] // Filter tags (e.g., ["anatomy", "important"])
-  description String? // Optional description
+  name        String
+  year        Int
+  tags        String[]
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Unique constraint: same name cannot exist for same year
   @@unique([name, year])
   @@index([year])
   @@index([tags])
 }
 
 model Video {
-  id String @id @default(uuid())
-
-  title String
-
-  url     String
-  topic   Topic?  @relation(fields: [topicId], references: [id])
-  topicId String?
-
-  facultyId String
-  faculty   Faculty @relation(fields: [facultyId], references: [id])
-
+  id        String   @id @default(uuid())
+  topicId   String?
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
+  url       String
+  facultyId String
+  title     String
+  faculty   Faculty  @relation(fields: [facultyId], references: [id])
+  topic     Topic?   @relation(fields: [topicId], references: [id])
 }
 
 model User {
-  id String @id @default(uuid())
-
+  id       String  @id @default(uuid())
   name     String?
-  stream   Stream?    @relation(fields: [streamId], references: [id], onDelete: Cascade)
   streamId String?
-  phone    String    @unique
+  phone    String  @unique
   year     Int?
-  userAuth UserAuth?
+
+  stream               Stream?                @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  userAuth             UserAuth?
+  userUnlockedSubject  UserUnlockedSubject[]
+  visitLog             VisitLog[]
+  userUnlockedContent  UserUnlockedContent[]
+  userCompletedContent UserCompletedContent[]
+  userMCQResponse      UserMCQResponse[]
+
+  coinTransaction CoinTransaction[]
+
+  referralCode String  @unique @default(dbgenerated("substr(md5(random()::text), 1, 8)"))
+  referredById String?
+  referredBy   User?   @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals    User[]  @relation("UserReferrals")
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 }
 
 model UserAuth {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  otpSecret String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
 
-  userId String @unique
+model UserUnlockedSubject {
+  id         String   @id @default(uuid())
+  userId     String
+  subjectId  String
+  unlockedAt DateTime @default(now())
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, subjectId])
+  @@index([userId])
+  @@index([subjectId])
+}
+
+model UserCompletedContent {
+  id     String @id @default(uuid())
+  userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  otpSecret String? // OTP for verification
+  resourceId         String
+  resourceType       ContentType
+  topicId            String
+  topic              Topic       @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  completePercentage Int         @default(0)
+
+  completedAt DateTime @default(now())
+
+  @@unique([userId, resourceType, resourceId])
+  @@index([userId])
+  @@index([resourceType, resourceId])
+  @@index([topicId])
+}
+
+model VisitLog {
+  id           String      @id @default(uuid())
+  userId       String
+  resourceId   String
+  topicId      String
+  resourceType ContentType
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  visitedAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([resourceType, resourceId])
+}
+
+enum ContentType {
+  MindMap
+  MCQ
+  FlashCard
+  Video
+}
+
+/// Table to track unlocked content per user
+model UserUnlockedContent {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  resourceId   String
+  resourceType ContentType
+
+  unlockedAt DateTime @default(now())
+
+  @@unique([userId, resourceType, resourceId])
+  @@index([userId])
+  @@index([resourceType, resourceId])
+}
+
+model UserMCQResponse {
+  id         String   @id @default(uuid())
+  userId     String
+  questionId String
+  tags       String[]
+  isCorrect  Boolean
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId])
+  @@index([questionId])
+  @@index([tags])
+}
+
+/// Enum to track source of coin gain
+enum CoinSource {
+  Reward
+  Purchase
+  Referral
+  Recharge
+}
+
+/// Optimized Coin Transaction Log
+model CoinTransaction {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      Int // Positive for gain, negative for deduction
+  source      CoinSource
+  referenceId String? // Optional: ID of the related entity (like referralId, rewardId, etc)
+  createdAt   DateTime   @default(now())
+
+  @@index([userId])
+  @@index([source])
 }

@@ -1,4 +1,4 @@
-import NothingFound from "@/app/_components/NothingFound";
+import { NothingFoundTable } from "@/app/_components/NothingFound";
 import useContentStore, { MindMap } from "@/store/content";
 import {
   ColumnDef,
@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import Loader from "@/app/_components/Loader";
+import { TableLoader } from "@/app/_components/Loader";
 import Link from "next/link";
 import { Edit2Icon, EyeIcon, LoaderCircle, Trash2Icon } from "lucide-react";
 import AddMindMap from "../forms/AddMindMap";
@@ -119,14 +119,7 @@ const MindMapTable = ({ topicId }: { topicId: string }) => {
         </TableHeader>
         <TableBody>
           {loadingMindMaps ? (
-            <TableRow>
-              <TableCell
-                colSpan={mindMapColumn.length}
-                className="h-24 text-center"
-              >
-                <Loader />
-              </TableCell>
-            </TableRow>
+            <TableLoader colSpan={mindMapColumn.length} />
           ) : table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
@@ -141,14 +134,10 @@ const MindMapTable = ({ topicId }: { topicId: string }) => {
               </TableRow>
             ))
           ) : (
-            <TableRow>
-              <TableCell
-                colSpan={mindMapColumn.length}
-                className="h-24 text-center"
-              >
-                <NothingFound text="No subjects found!" />
-              </TableCell>
-            </TableRow>
+            <NothingFoundTable
+              text="No mind maps found for this topic."
+              colSpan={mindMapColumn.length}
+            />
           )}
         </TableBody>
       </Table>

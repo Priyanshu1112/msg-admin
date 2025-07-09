@@ -1,4 +1,3 @@
-import { category } from "../Category";
 import ChapterTable from "./ChapterTable";
 import SubjectTable from "./SubjectTable";
 import TopicTable from "./TopicTable";

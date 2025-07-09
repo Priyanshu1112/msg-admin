@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from "next/server";
 
 import { prisma } from "@/service/prisma";
 import { v4 as uuidv4 } from "uuid";
-import { BundleType } from "@prisma/client";
+import { ContentType } from "@prisma/client";
 import { catchApiError } from "../../_utils/catchApiError";
 import { successResponse } from "../../_utils/Response";
 
@@ -30,7 +31,7 @@ export const POST = catchApiError(async (request: NextRequest) => {
       name: bundle.name,
       topicId,
       description: bundle.description || "",
-      type: BundleType.FlashCard,
+      type: ContentType.FlashCard,
     };
   });
 
@@ -88,7 +89,7 @@ export const POST = catchApiError(async (request: NextRequest) => {
     _count: {
       flashCards: bundles[i].flashcards.length,
     },
-    description : entry.description
+    description: entry.description,
   }));
 
   return successResponse(

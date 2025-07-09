@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from "next/server";
 import { catchApiError } from "../_utils/catchApiError";
 import { successResponse } from "../_utils/Response";
 import { prisma } from "@/service/prisma";
 import { v4 as uuidv4 } from "uuid";
-import { BundleType } from "@prisma/client";
+import { ContentType } from "@prisma/client";
 
 export const POST = catchApiError(async (request: NextRequest) => {
   const { bundles, topicId } = await request.json();
@@ -30,7 +31,7 @@ export const POST = catchApiError(async (request: NextRequest) => {
       name: bundle.name,
       topicId,
       description: bundle.description || "",
-      type: BundleType.MCQ,
+      type: ContentType.MCQ,
     };
   });
 

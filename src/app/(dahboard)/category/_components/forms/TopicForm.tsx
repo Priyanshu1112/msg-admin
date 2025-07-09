@@ -331,7 +331,7 @@ const AddTopicForm = ({
                                       }}
                                       placeholder={`Enter topic ${
                                         index + 1
-                                      } name`}
+                                      } name `}
                                       onKeyDown={(e) => handleKeyDown(e, index)}
                                       className="pr-20"
                                     />
